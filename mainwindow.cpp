@@ -39,10 +39,11 @@ MainWindow::MainWindow(QWidget *parent)
     QWellbore *W56=new QWellbore("GWzk56",this);
 
     W56->AddSample(-1.68,-0.98,"粉质黏土2");
-    W56->AddSample(-0.98,1,"淤泥");
-    W56->AddSample(1,3.32,"沙泥");
-    W56->AddSample(3.32,4.32,"淤泥");
-    W56->AddSample(4.32,6.03,"耕土");
+    W56->AddSample(-0.98,2.32,"淤泥");
+//    W56->AddSample(-0.98,1,"淤泥");
+//    W56->AddSample(1,3.32,"沙泥");
+//    W56->AddSample(3.32,4.32,"淤泥");
+    W56->AddSample(2.32,5.32,"耕土");
 
     QWellbore * W49=new QWellbore("GWzk49",this);
     W49->AddSample(3.03,6.03,"耕土");
@@ -66,8 +67,8 @@ MainWindow::MainWindow(QWidget *parent)
     W21->AddSample(4.10,5.10,"耕土");
     W21->AddSample(2.10,4.10,"粉质黏土2");
 
-    QList<QWellbore *> wells={W21,W28,W35,W42,W49,W56,W63};
-    QList<float > wellDistance={25.06,24.94,25.13,30.71,19.36,18.45};
+    QList<QWellbore *> wells={W63,W56,W49,W42,W35,W28,W21};
+    QList<float > wellDistance={18.45,19.36,30.71,25.13,24.94,25.06};
     QVector<QSection*>sections;
 //    QVector<QGeoSectionWidget *> sectionWigets;
     float top=9999999999,bottom=-999999999;

@@ -24,6 +24,8 @@
 #define GROUND_THICKNESS 0.10 //m
 #define TICK_WIDTH 5
 #define DEFAULT_LEGEND "default"
+#define BRUSH_X_SCALE 5
+#define BRUSH_Y_SCALE 5
 enum LayerMatch{
     One2One,
     One2Many,
