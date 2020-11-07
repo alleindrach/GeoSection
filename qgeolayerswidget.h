@@ -19,10 +19,13 @@ class QGeoLayersWidget:public QGeoSectionContent
         }
         virtual QString dataAtPos(QPointF pos);
         QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint) const override;
-    private:
+        bool last() const;
+        void setLast(bool last);
+
+private:
         QSection* _section;
         void drawLayers(QPainter *painter);
-
+        bool _last=false;
 
 };
 

@@ -73,7 +73,7 @@ MainWindow::MainWindow(QWidget *parent)
     float top=9999999999,bottom=-999999999;
     float width=0;
     int s=wells.length();
-    for(int i=0;i<wells.length()-1;i++){
+    for(int i=0;i<s-1;i++){
         float w=wellDistance[i];
         //    for(int i=0;i<wells.length()-1;i++){
         QSection *sec=new QSection(wells[i],wells[i+1],w,this);
@@ -102,7 +102,9 @@ MainWindow::MainWindow(QWidget *parent)
     for(int i=0;i<sections.length();i++){
         QSection *sec=sections[i];
         QGeoLayersWidget * content=new QGeoLayersWidget(sec,QRectF(QPointF(0,top),QPointF(sec->distance(),bottom)));
+        content->setLast(i==sections.length()-1);
         QGeoSectionTitle * title=new QGeoSectionTitle(sec,((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
+        title->setLast(i==sections.length()-1);
         QGeoSectionWidget * track=new QGeoSectionWidget(title,content,((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
         int sf=sec->width()*100/width;
 //        connect(track,&QGeoSectionWidget::hoverData,this,&MainWindow::on_hover_data);

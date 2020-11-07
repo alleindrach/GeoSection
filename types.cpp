@@ -232,8 +232,8 @@ void QWellbore::print(){
 void QWellbore::seal()
 {
     // 步骤 1:对所有钻孔进行数据预处理，在各钻孔顶端和底端添加 0 厚度的虚拟连续地层。
-    this->AddSample(this->top()/100,this->top()/100,"顶部虚拟层",1);
-    this->AddSample(this->bottom()/100,this->bottom()/100,"底部虚拟层",2);
+    this->AddSample(this->top()/Y_SCALE,this->top()/Y_SCALE,"顶部虚拟层",1);
+    this->AddSample(this->bottom()/Y_SCALE,this->bottom()/Y_SCALE,"底部虚拟层",2);
 }
 
 float QWellbore::top()
@@ -609,31 +609,47 @@ void QSection::drawGround(QPainter *painter)
     painter->drawLine(QPointF(0,left()->bottom()),QPointF(distance(),right()->bottom()));
 
 }
-
-void QSection::drawGround(QPainter *painter, QTransform transform)
-{
+void QSection::drawOneGround(QPainter *painter, QTransform& transform,QPolygonF & poly,QLineF  & line){
+    painter->save();
     QPainterPath groundPath;
+    groundPath.addPolygon(transform.map(poly));
+
+    QBrush brush=QBrush(Qt::BDiagPattern);
+    painter->setBrush(brush);
+    painter->setPen(QPen(QColor(79, 106, 25),0, Qt::SolidLine,
+                         Qt::FlatCap, Qt::MiterJoin));
+    painter->fillPath(groundPath,brush);
+    painter->setPen(QPen(QBrush(Qt::black),1,Qt::SolidLine));
+    painter->drawLine(transform.map(line));
+    painter->restore();
+}
+void QSection::drawGround(QPainter *painter, QTransform& transform2)
+{
 
     QPolygonF ground;
 
-    QTransform  transform2=transform.inverted();
+    ground.append(QPointF(0,left()->top()-GROUND_THICKNESS));
+    ground.append(QPointF(distance(),right()->top()-GROUND_THICKNESS));
+    ground.append(QPointF(distance(),right()->top()));
+    ground.append(QPointF(0,left()->top()));
+    ground.append(QPointF(0,left()->top()-GROUND_THICKNESS));
+    QLineF bottom=QLineF(
+                QPointF(0,left()->top()),
+                QPointF(distance(),right()->top())
+                );
+    this->drawOneGround(painter,transform2,ground,bottom);
 
-    groundPath.moveTo(QPointF(0,left()->top()-GROUND_THICKNESS));
-    groundPath.lineTo(QPointF(distance(),right()->top()-GROUND_THICKNESS));
-    groundPath.lineTo(QPointF(distance(),right()->top()));
-    groundPath.lineTo(QPointF(0,left()->top()));
-    groundPath.lineTo(QPointF(0,left()->top()-GROUND_THICKNESS));
-
-
-    QBrush brush=QBrush(Qt::BDiagPattern);
-
-    painter->setBrush(brush);
-    painter->setPen(QPen(QColor(79, 106, 25),1, Qt::SolidLine,
-                         Qt::FlatCap, Qt::MiterJoin));
-
-    painter->drawPath(transform2.map(groundPath));
-    painter->setPen(QPen(QBrush(Qt::black),2,Qt::SolidLine));
-    painter->drawLine(transform2.map(QPointF(0,left()->samples[0]->top())),transform2.map(QPointF(distance(),right()->samples[0]->top()))）;
+    QPolygonF  ground2;
+    ground2.append(QPointF(0,left()->bottom()+GROUND_THICKNESS));
+    ground2.append(QPointF(distance(),right()->bottom()+GROUND_THICKNESS));
+    ground2.append(QPointF(distance(),right()->bottom()));
+    ground2.append(QPointF(0,left()->bottom()));
+    ground2.append(QPointF(0,left()->bottom()+GROUND_THICKNESS));
+    QLineF bottom2=QLineF(
+                QPointF(0,left()->bottom()),
+                QPointF(distance(),right()->bottom())
+                );
+    this->drawOneGround(painter,transform2,ground2,bottom2);
 
 }
 
@@ -832,10 +848,6 @@ void QSampleLinks::Normalize()
     }
 }
 
-
-
-
-
 QGeoFormation* QGeoSample::formation() const
 {
     return _formation;
@@ -846,43 +858,53 @@ void QGeoSample::setFormation( QGeoFormation * formation)
     _formation = formation;
 }
 
-void QGeoSample::paint(QPainter *painter,int align, float width)
+void QGeoSample::paint(QPainter *painter,QTransform &transform,int align, float width,bool last)
 {
+    painter->save();
     //    painter->fillRect(QRectF(QPointF(0,this->top()-10),QPointF(300,this->top()+10)),Qt::white);
     painter->setPen(QPen(QColor(DARK_RED), 1, Qt::SolidLine,
                          Qt::FlatCap, Qt::MiterJoin));
     if(align==0){
-        painter->drawLine(QPointF(0,this->top()),QPointF(TICK_WIDTH,this->top()));
+        QPointF pos=transform.map(QPointF(0,this->top()));
+        QPointF pos2=pos;
+        pos2+=QPointF(TICK_WIDTH,0);
+        painter->drawLine(pos,pos2);
     }else{
-        painter->drawLine(QPointF(width-TICK_WIDTH,this->top()),QPointF(width,this->top()));
+        QPointF pos=transform.map(QPointF(width,this->top()));
+        QPointF pos2=pos;
+        pos2-=QPointF(TICK_WIDTH,0);
+        painter->drawLine(pos,pos2);
     }
 
 
-    QFont font("宋体", 20, QFont::ExtraBold, true);   //字体，大小，粗体，斜体
+    QFont font("宋体", 8, QFont::ExtraBold, true);   //字体，大小，粗体，斜体
     font.setCapitalization(QFont::Capitalize);   //设置字母大小写
     //    font.setUnderline(true); //设置下划线
     //    font.setOverline(true); //设置上划线
     // font.setLetterSpacing(QFont::AbsoluteSpacing, 10); //设置字符间的间距
     painter->setFont(font);
+    QRectF txtBounder=QRectF(transform.map(QPointF(0,this->top()))+=QPointF(TICK_WIDTH,-5),
+                             transform.map(QPointF(width,this->top()))+=QPointF(-TICK_WIDTH,5));
+    QRectF txtNextBounder=txtBounder;
+    txtNextBounder.adjust(0,10,0,10);
     if(_seal==0 ){
         if(align==0){
-            painter->drawText(QPointF(TICK_WIDTH,this->top()+10),QString("%1").arg(QString::number(this->top()/100,'f',2)));
-            painter->drawText(QPointF(TICK_WIDTH,this->top()+28),QString("%1").arg(this->desc()));
+            painter->drawText(txtBounder,Qt::AlignLeft|Qt::AlignTop,QString("%1").arg(QString::number(this->top()/Y_SCALE,'f',2)));
+            painter->drawText(txtNextBounder,Qt::AlignLeft|Qt::AlignTop,QString("%1").arg(this->desc()));
         }else{
-            painter->drawText(QPointF(width-TICK_WIDTH-60,this->top()+10),QString("%1").arg(QString::number(this->top()/100,'f',2)));
-            painter->drawText(QPointF(width-TICK_WIDTH-60,this->top()+28),QString("%1").arg(this->desc()));
+            painter->drawText(txtBounder,Qt::AlignRight|Qt::AlignTop,QString("%1").arg(QString::number(this->top()/Y_SCALE,'f',2)));
+            painter->drawText(txtNextBounder,Qt::AlignRight|Qt::AlignTop,QString("%1").arg(this->desc()));
         }
-
 
     }else if (_seal==2){
         if(align==0){
-            painter->drawText(QPointF(TICK_WIDTH,this->top()),QString("%1").arg(QString::number(this->top()/100,'f',2)));
-        }else{
-            painter->drawText(QPointF(width-TICK_WIDTH-100,this->top()),QString("%1").arg(QString::number(this->top()/100,'f',2)));
-        }
+            painter->drawText(txtBounder,Qt::AlignLeft|Qt::AlignTop,QString("%1").arg(QString::number(this->top()/Y_SCALE,'f',2)));
 
-        //        painter->drawText(QPointF(TICK_WIDTH,this->top()+10),QString("%1\t%2").arg(QString::number(this->top()/100,'f',2)).arg(this->desc()));
+        }else{
+           painter->drawText(txtBounder,Qt::AlignRight|Qt::AlignTop,QString("%1").arg(QString::number(this->top()/Y_SCALE,'f',2)));
+        }
     }
+    painter->restore();
 }
 
 QGeoFormation::QGeoFormation(QPainterPath  contour, QString desc, QObject *parent):QObject(parent),contour(contour),_desc(desc)
@@ -920,20 +942,21 @@ void QGeoFormation::setDesc(const QString &desc)
     _desc = desc;
 }
 
-void QGeoFormation::paint(QPainter *painter)
+void QGeoFormation::paint(QPainter *painter,QTransform& transform)
 {
+    painter->save();
     //    QPainterPath formationPath;
-    QTransform  transform;
+    QTransform  brushTransform;
     //    QPolygonF formationBorder=QPolygonF(verts);
     //    formationPath.addPolygon(formationBorder);
-    transform.scale(1.8,1.8);
+    brushTransform.scale(8,8);
     QBrush brush=QGeoSectionScene::getLegend(this->desc());
-    brush.setTransform(transform);
+    brush.setTransform(brushTransform);
     painter->setBrush(brush);
     painter->setPen(QPen(QColor(79, 106, 25), 1, Qt::SolidLine,
                          Qt::FlatCap, Qt::MiterJoin));
 
-    painter->drawPath(this->contour);
-
+    painter->drawPath(transform.map(this->contour));
+    painter->restore();
 
 }
