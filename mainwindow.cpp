@@ -66,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
     W21->AddSample(4.10,5.10,"耕土");
     W21->AddSample(2.10,4.10,"粉质黏土2");
 
-    QList<QWellbore *> wells={W56,W63,W49,W42,W35,W28,W21};
+    QList<QWellbore *> wells={W35,W42,W49,W56,W63,W21,W28};
     QVector<QSection*>sections;
 //    QVector<QGeoSectionWidget *> sectionWigets;
     float top=9999999999,bottom=-999999999;
@@ -91,12 +91,12 @@ MainWindow::MainWindow(QWidget *parent)
     scene->setBackgroundBrush(QBrush(Qt::gray));
     ui->graphicsView->setContentsMargins(0,0,0,0);
     ui->graphicsView->setScene(scene);
-    QGeoSectionScene::addLegend("粉质黏土2",Qt::DiagCrossPattern,QColor(100,100,100,100));
-    QGeoSectionScene::addLegend("淤泥",Qt::Dense5Pattern,QColor(100,100,100,100));
-    QGeoSectionScene::addLegend("耕土",Qt::Dense6Pattern,QColor(100,100,100,100));
-    QGeoSectionScene::addLegend("粉质黏土1",Qt::CrossPattern,QColor(100,100,100,100));
-    QGeoSectionScene::addLegend("沙泥",Qt::Dense7Pattern,QColor(100,100,100,100));
-    QGeoSectionScene::addLegend(DEFAULT_LEGEND ,Qt::Dense6Pattern,QColor(10,10,10,100));
+    QGeoSectionScene::addLegend("粉质黏土2",Qt::DiagCrossPattern,QColor(100,100,100));
+    QGeoSectionScene::addLegend("淤泥",Qt::Dense5Pattern,QColor(100,100,100));
+    QGeoSectionScene::addLegend("耕土",Qt::Dense6Pattern,QColor(100,100,100));
+    QGeoSectionScene::addLegend("粉质黏土1",Qt::CrossPattern,QColor(100,100,100));
+    QGeoSectionScene::addLegend("沙泥",Qt::Dense7Pattern,QColor(100,100,100));
+    QGeoSectionScene::addLegend(DEFAULT_LEGEND ,Qt::Dense6Pattern,QColor(10,10,10));
 
     for(int i=0;i<sections.length();i++){
         QSection *sec=sections[i];

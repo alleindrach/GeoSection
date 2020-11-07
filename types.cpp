@@ -234,7 +234,6 @@ void QWellbore::seal()
     // 步骤 1:对所有钻孔进行数据预处理，在各钻孔顶端和底端添加 0 厚度的虚拟连续地层。
     this->AddSample(this->top()/100,this->top()/100,"顶部虚拟层",1);
     this->AddSample(this->bottom()/100,this->bottom()/100,"底部虚拟层",2);
-
 }
 
 float QWellbore::top()
@@ -360,12 +359,28 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
                 if(leftLinkedsampleMap.contains(nextLinkedsampleIndex)){//左侧链接信息中，标注改层链接信息不为空，则说明此层有对应的右侧地层，找到了下一连续地层
                     break;
                 }
+                nextLinkedsampleIndex++;
             }
             int diffOfRight =leftLinkedsampleMap[nextLinkedsampleIndex].first()-leftLinkedsampleMap[prevLinkedsampleIndex].last();//右侧的地层间隔
             int diffOfLeft=nextLinkedsampleIndex-prevLinkedsampleIndex;//左侧地层间隔
             if (diffOfRight==0){
                 //右侧尖灭地层
-                if(left->samples[cursampleIndex]->Thickness()<2){
+
+                QGeoFormation * prevFormation=left->samples[cursampleIndex-1]->formation();
+                if(prevFormation!=nullptr){
+                    QVector<QPointF> verts;
+                    if(!rev){
+                        verts.append(QPointF(0,left->samples[cursampleIndex]->top()));
+                        verts.append(QPointF(_distance,right->samples[leftLinkedsampleMap[cursampleIndex-1].last()]->bottom()));
+                        verts.append(QPointF(0,left->samples[cursampleIndex]->bottom()));
+                    }else{
+                        verts.append(QPointF(_distance,left->samples[cursampleIndex]->top()));
+                        verts.append(QPointF(0,right->samples[leftLinkedsampleMap[cursampleIndex-1].last()]->bottom()));
+                        verts.append(QPointF(_distance,left->samples[cursampleIndex]->bottom()));
+                    }
+                    prevFormation->merge(verts);
+                }
+                if(left->samples[cursampleIndex]->Thickness()<0*Y_SCALE){
                     //                    规则 1:相邻钻孔间，若存在厚度小于 2m 的夹层，则该层忽略不计，将该层与相邻地 层进行合并;
                     if(cursampleIndex>1){
                         left->samples[cursampleIndex]->setDesc(left->samples[cursampleIndex-1]->desc());
@@ -375,9 +390,21 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
                         //                        left->samples[cursampleIndex]->setFormation(left->samples[cursampleIndex+1].formation());
                     }
                 }else{
-                    float vanishPosX=0.5*_distance;
-                    float vanishPosYT=left->samples[cursampleIndex-1]->top()-(left->samples[cursampleIndex-1]->top()-right->samples[leftLinkedsampleMap[cursampleIndex-1].last()]->top())*vanishPosX;
-                    float vanishPosYB=left->samples[cursampleIndex+1]->bottom()-(left->samples[cursampleIndex-1]->bottom()-right->samples[leftLinkedsampleMap[cursampleIndex+1].first()]->bottom())*vanishPosX;
+                    float xPosScale=0.5;
+                    if(left->samples[cursampleIndex]->Thickness()<5*Y_SCALE){
+                        xPosScale=0.33;
+                    }else if(left->samples[cursampleIndex]->Thickness()<8*Y_SCALE){
+                        xPosScale=0.5;
+                    }else if(left->samples[cursampleIndex]->Thickness()>=8*Y_SCALE){
+                        xPosScale=0.66;
+                    }
+                    float vanishPosX=xPosScale*_distance;
+                    float curLeftSampleTop=left->samples[cursampleIndex]->top();
+                    float curRightSampleTop=right->samples[leftLinkedsampleMap[cursampleIndex-1].last()]->bottom();
+                    float curLeftSampleBottom=left->samples[cursampleIndex]->bottom();
+
+                    float vanishPosYT=curLeftSampleTop-(curLeftSampleTop-curRightSampleTop)*xPosScale;
+                    float vanishPosYB=curLeftSampleBottom-(curLeftSampleBottom-curRightSampleTop)*xPosScale;
                     float vanishPosY=(vanishPosYB+vanishPosYT)/2.0;
 
                     QVector<QPointF> verts;
@@ -392,6 +419,7 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
                     }
                     QGeoFormation * formation=new QGeoFormation(verts,left->samples[cursampleIndex]->desc(),this);
                     this->AddFormation(formation);
+                    prevFormation->sub(verts);
                     left->samples[cursampleIndex]->setFormation(formation);
                 }
                 left->samples[cursampleIndex]->setVanish(true);
@@ -420,15 +448,15 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
                 //                分别计算该地层的上下分界点与上述各点的连线的 斜率，取两连线的较大值作为与各点平缓的参考值，取参考值最小的点作为尖灭点。
                 bool onLeftSide=true;//左侧
                 int leftsampleIndex=cursampleIndex;
-                int rightsampleIndex=leftLinkedsampleMap[prevLinkedsampleIndex].last()+1;
+                int rightsampleIndex=leftLinkedsampleMap[prevLinkedsampleIndex].last();
                 //方法：以左侧为准，每次取左侧一个地层底部连到右侧顶部做尖灭，再反过来取右侧一个地层底部连接到左侧地层底部做尖灭，交替进行
                 while(true){
                     if(onLeftSide){//左侧
 
                         QVector<QPointF> verts;
                         verts.append(QPointF(0,left->samples[leftsampleIndex]->top()));
-                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->top()));
-                        verts.append(QPointF(0,right->samples[leftsampleIndex]->bottom()));
+                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->bottom()));
+                        verts.append(QPointF(0,left->samples[leftsampleIndex]->bottom()));
 
                         QGeoFormation * formation=new QGeoFormation(verts,left->samples[leftsampleIndex]->desc(),this);
                         this->AddFormation(formation);
@@ -437,8 +465,11 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
                         //如果
                         if(rightsampleIndex<leftLinkedsampleMap[nextLinkedsampleIndex].first()){
                             onLeftSide=false;
+                            rightsampleIndex++;
+                        }else{
+                            leftsampleIndex++;
                         }
-                        leftsampleIndex++;
+
                     }else{
 
                         QVector<QPointF> verts;
@@ -453,15 +484,21 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
                         //                        sampleLinks->AddLink(new QSampleLink(leftsampleIndex,Bottom,rightsampleIndex,Bottom));
                         if(leftsampleIndex<nextLinkedsampleIndex-1){
                             onLeftSide=true;
+                            leftsampleIndex++;
+                        }else{
+                            rightsampleIndex++;
                         }
-                        rightsampleIndex++;
+
                     }
                     if ((onLeftSide && leftsampleIndex>=nextLinkedsampleIndex) || (!onLeftSide && rightsampleIndex>=leftLinkedsampleMap[nextLinkedsampleIndex].first())){
                         break;
                     }
                 }
                 cursampleIndex=nextLinkedsampleIndex;
+            }else{
+                cursampleIndex++;
             }
+
             prevLinkedsampleIndex=nextLinkedsampleIndex;
         }
     }
@@ -763,7 +800,7 @@ void QGeoSample::paint(QPainter *painter)
         painter->drawText(QPointF(TICK_WIDTH,this->top()+10),QString("%1\t%2").arg(QString::number(this->top()/100,'f',2)).arg(this->desc()));
     }else if (_seal==2){
         painter->drawText(QPointF(TICK_WIDTH,this->top()),QString("%1").arg(QString::number(this->top()/100,'f',2)));
-//        painter->drawText(QPointF(TICK_WIDTH,this->top()+10),QString("%1\t%2").arg(QString::number(this->top()/100,'f',2)).arg(this->desc()));
+        //        painter->drawText(QPointF(TICK_WIDTH,this->top()+10),QString("%1\t%2").arg(QString::number(this->top()/100,'f',2)).arg(this->desc()));
     }
 }
 
@@ -774,22 +811,27 @@ QGeoFormation::QGeoFormation(QPainterPath  contour, QString desc, QObject *paren
 
 QGeoFormation::QGeoFormation(QVector<QPointF> verts, QString desc, QObject *parent):QObject(parent)
 {
-    //    QPainterPath path;
-    //    assert(contour.size()>1);
-    //    path.moveTo(contour[0]);
-    //    for(int i=1;i<contour.size();i++){
-    //        path.lineTo(contour[i]);
-    //    }
-    //    path.lineTo(contour[0]);
-    //    this->contour=path;
-    this->verts=verts;
-    this->verts.append(this->verts[0]);
+    this->contour.addPolygon(QPolygonF(verts));
     this->_desc=desc;
 }
 
 QString QGeoFormation::desc() const
 {
     return _desc;
+}
+
+void QGeoFormation::merge(QVector<QPointF> verts)
+{
+    QPainterPath addtionalPath;
+    addtionalPath.addPolygon(QPolygonF(verts));
+    this->contour+=addtionalPath;
+}
+
+void QGeoFormation::sub(QVector<QPointF> verts)
+{
+    QPainterPath addtionalPath;
+    addtionalPath.addPolygon(QPolygonF(verts));
+    this->contour-=addtionalPath;
 }
 
 void QGeoFormation::setDesc(const QString &desc)
@@ -799,10 +841,10 @@ void QGeoFormation::setDesc(const QString &desc)
 
 void QGeoFormation::paint(QPainter *painter)
 {
-    QPainterPath formationPath;
+    //    QPainterPath formationPath;
     QTransform  transform;
-    QPolygonF formationBorder=QPolygonF(verts);
-    formationPath.addPolygon(formationBorder);
+//    QPolygonF formationBorder=QPolygonF(verts);
+    //    formationPath.addPolygon(formationBorder);
     transform.scale(2,2);
     QBrush brush=QGeoSectionScene::getLegend(this->desc());
     brush.setTransform(transform);
@@ -810,7 +852,7 @@ void QGeoFormation::paint(QPainter *painter)
     painter->setPen(QPen(QColor(79, 106, 25), 1, Qt::SolidLine,
                          Qt::FlatCap, Qt::MiterJoin));
 
-    painter->drawPath(formationPath);
+    painter->drawPath(this->contour);
 
 
 }

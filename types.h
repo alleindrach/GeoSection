@@ -86,7 +86,7 @@ private:
     QString _desc="";
     QList<QGeoSample*>_paired;//同质的地层
     QList<QGeoSample*>_bottomLinked;//底层连接到的层
-    QGeoFormation * _formation;
+    QGeoFormation * _formation=nullptr;
 };
 Q_DECLARE_METATYPE(QGeoSample*);
 
@@ -196,9 +196,11 @@ public:
     explicit QGeoFormation(QPainterPath contour,QString desc,QObject * parent=nullptr);
     explicit QGeoFormation(QVector<QPointF> contour,QString desc ,QObject * parent=nullptr);
     QPainterPath contour;
-    QVector<QPointF> verts;
+//    QVector<QPointF> verts;
 
     QString desc() const;
+    void merge(QVector<QPointF> contour);
+    void sub(QVector<QPointF> contour);
     void setDesc(const QString &desc);
     void paint(QPainter * painter);
 private:
