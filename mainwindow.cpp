@@ -32,74 +32,84 @@ MainWindow::MainWindow(QWidget *parent)
 
     QWellbore * W63=new QWellbore("GWzk63",this);
 
-    W63->AddLayer(0.53,3.33,"粉质黏土2");
-    W63->AddLayer(3.33,4.53,"淤泥");
-    W63->AddLayer(4.53,5.53,"耕土");
+    W63->AddSample(0.53,3.33,"粉质黏土2");
+    W63->AddSample(3.33,4.53,"淤泥");
+    W63->AddSample(4.53,5.53,"耕土");
 
     QWellbore *W56=new QWellbore("GWzk56",this);
 
-    W56->AddLayer(-1.68,-0.98,"粉质黏土2");
-    W56->AddLayer(-0.98,1,"淤泥");
-    W56->AddLayer(1,1.32,"沙泥");
-    W56->AddLayer(1.32,2.32,"淤泥");
-    W56->AddLayer(3.03,6.03,"耕土");
+    W56->AddSample(-1.68,-0.98,"粉质黏土2");
+    W56->AddSample(-0.98,1,"淤泥");
+    W56->AddSample(1,3.32,"沙泥");
+    W56->AddSample(3.32,4.32,"淤泥");
+    W56->AddSample(4.32,6.03,"耕土");
 
     QWellbore * W49=new QWellbore("GWzk49",this);
-    W49->AddLayer(3.03,6.03,"耕土");
-    W49->AddLayer(0.33,3.03,"粉质黏土2");
+    W49->AddSample(3.03,6.03,"耕土");
+    W49->AddSample(0.33,3.03,"粉质黏土2");
 
     QWellbore * W42=new QWellbore("GWzk42",this);
-    W42->AddLayer(3.17,5.57,"淤泥");
-    W42->AddLayer(0.57,3.17,"粉质黏土2");
+    W42->AddSample(3.17,5.57,"淤泥");
+    W42->AddSample(0.57,3.17,"粉质黏土2");
 
     QWellbore * W35=new QWellbore("GWzk35",this);
-    W35->AddLayer(4.65,5.05,"耕土");
-    W35->AddLayer(3.25,4.65,"粉质黏土1");
-    W35->AddLayer(1.05,3.25,"粉质黏土2");
+    W35->AddSample(4.65,5.05,"耕土");
+    W35->AddSample(3.25,4.65,"粉质黏土1");
+    W35->AddSample(1.05,3.25,"粉质黏土2");
 
     QWellbore  *W28 =new QWellbore("GWzk28",this);
-    W28->AddLayer(4.82,5.22,"耕土");
-    W28->AddLayer(3.42,4.82,"粉质黏土1");
-    W28->AddLayer(0.22,3.42,"粉质黏土2");
+    W28->AddSample(4.82,5.22,"耕土");
+    W28->AddSample(3.42,4.82,"粉质黏土1");
+    W28->AddSample(0.22,3.42,"粉质黏土2");
 
     QWellbore *W21=new QWellbore("GWzk21",this);
-    W21->AddLayer(4.10,5.10,"耕土");
-    W21->AddLayer(2.10,4.10,"粉质黏土2");
+    W21->AddSample(4.10,5.10,"耕土");
+    W21->AddSample(2.10,4.10,"粉质黏土2");
 
-    QList<QWellbore *> wells={W63,W56,W49,W42,W35,W28,W21};
+    QList<QWellbore *> wells={W56,W63,W49,W42,W35,W28,W21};
     QVector<QSection*>sections;
 //    QVector<QGeoSectionWidget *> sectionWigets;
-    float top=99999,bottom=-99999;
+    float top=9999999999,bottom=-999999999;
+    float width=0;
     int s=wells.length();
-    for(int i=0;i<s-1;i++){
+    for(int i=0;i<1;i++){
+        float w=10;
         //    for(int i=0;i<wells.length()-1;i++){
-        QSection *sec=new QSection(wells[i],wells[i+1],10,this);
+        QSection *sec=new QSection(wells[i],wells[i+1],w,this);
+        width+=w;
         //        QGeoSectionWidget *widget=new QGeoSectionWidget(sec,ui->graphicsView);
-        if(sec->Top()<top){
-            top=sec->Top();
+        if(sec->top()<top){
+            top=sec->top();
         }
-        if(sec->Bottom()>bottom){
-            bottom=sec->Bottom();
+        if(sec->bottom()>bottom){
+            bottom=sec->bottom();
         }
-//        sec->Process();
+        sec->process();
         sections.append(sec);
     }
     QGeoSectionScene * scene=new QGeoSectionScene(ui->graphicsView);
     scene->setBackgroundBrush(QBrush(Qt::gray));
     ui->graphicsView->setContentsMargins(0,0,0,0);
     ui->graphicsView->setScene(scene);
+    QGeoSectionScene::addLegend("粉质黏土2",Qt::DiagCrossPattern,QColor(100,100,100,100));
+    QGeoSectionScene::addLegend("淤泥",Qt::Dense5Pattern,QColor(100,100,100,100));
+    QGeoSectionScene::addLegend("耕土",Qt::Dense6Pattern,QColor(100,100,100,100));
+    QGeoSectionScene::addLegend("粉质黏土1",Qt::CrossPattern,QColor(100,100,100,100));
+    QGeoSectionScene::addLegend("沙泥",Qt::Dense7Pattern,QColor(100,100,100,100));
+    QGeoSectionScene::addLegend(DEFAULT_LEGEND ,Qt::Dense6Pattern,QColor(10,10,10,100));
 
     for(int i=0;i<sections.length();i++){
         QSection *sec=sections[i];
-        QGeoLayersWidget * content=new QGeoLayersWidget(sec,QRectF(0,top,sec->Width(),bottom));
+        QGeoLayersWidget * content=new QGeoLayersWidget(sec,QRectF(QPointF(0,top),QPointF(sec->distance(),bottom)));
 
         QGeoSectionTitle * title=new QGeoSectionTitle(sec->name(),((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
         QGeoSectionWidget * track=new QGeoSectionWidget(title,content,((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
-
+        int sf=sec->width()*100/width;
 //        connect(track,&QGeoSectionWidget::hoverData,this,&MainWindow::on_hover_data);
 //        sectionWigets.append(track);
-        scene->AddSection(track);
+        scene->AddSection(track,-1,sf);
     }
+    this->resize(this->size()+QSize(1,1));
 }
 
 MainWindow::~MainWindow()

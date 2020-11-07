@@ -1,7 +1,7 @@
 #include "qgeosectionscene.h"
 #include <QLabel>
 #include <QGraphicsScene>
-
+QMap<QString,QBrush> QGeoSectionScene::_legends=QMap<QString,QBrush>();
 QGeoSectionScene::QGeoSectionScene(QObject *parent ):QGraphicsScene(parent)
 {
 
@@ -38,6 +38,7 @@ QGeoSectionScene::QGeoSectionScene(QObject *parent ):QGraphicsScene(parent)
     _form = new QGraphicsWidget;
     _form->setContentsMargins(8,8,0,0);
     _form->setLayout(topLayout);
+
     _form->setPos(0,0);
 //    _form->setGeometry(QRectF(0,0,100,1000));
 //    _form->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
@@ -46,7 +47,7 @@ QGeoSectionScene::QGeoSectionScene(QObject *parent ):QGraphicsScene(parent)
 }
 
 
-void QGeoSectionScene::AddSection(QGeoSectionWidget *section, int pos, int /*stretchFactor*/)
+void QGeoSectionScene::AddSection(QGeoSectionWidget *section, int pos, int sf)
 {
     if(pos<0||pos>=_sections.size()){
         _sections.append(section);
@@ -54,6 +55,7 @@ void QGeoSectionScene::AddSection(QGeoSectionWidget *section, int pos, int /*str
         _sections.insert(pos,section);
     }
     _sectionLayout->addItem(section);
+    _sectionLayout->addStretch(sf);
     for(int i=0;i<_sections.size();i++)
     {
         _sectionLayout->setItemSpacing(i,0);
@@ -68,5 +70,23 @@ void QGeoSectionScene::AddSection(QGeoSectionWidget *section, int pos, int /*str
     }else{
         section->setTitleHeight(this->_titleHeight);
     }
-//    section->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Expanding);
+    //    section->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Expanding);
+}
+
+void QGeoSectionScene::addLegend(QString desc, Qt::BrushStyle style, QColor color)
+{
+    QBrush  brush=QBrush(color,style);
+//    QTransform  transform;
+//    transform.scale(10,10);
+//    brush.setTransform(transform);
+    QGeoSectionScene::_legends[desc]=brush;
+}
+
+QBrush& QGeoSectionScene::getLegend(QString desc)
+{
+     if(QGeoSectionScene::_legends.contains(desc)){
+         return QGeoSectionScene::_legends[desc];
+     }else{
+         return QGeoSectionScene::_legends.first();
+     }
 }
