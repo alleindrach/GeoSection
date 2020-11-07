@@ -4,10 +4,10 @@
 #include <QGraphicsLayoutItem>
 #include <QSizeF>
 #include <QPainter>
-QGeoSectionTitle::QGeoSectionTitle(QString title, QGraphicsItem *parent)
-    :QGraphicsWidget(parent),_title(title)
+
+QGeoSectionTitle::QGeoSectionTitle(QSection *section, QGraphicsItem *parent):QGraphicsWidget(parent),_section(section)
 {
-    //    this->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+
 }
 
 void QGeoSectionTitle::paint(QPainter *painter, const QStyleOptionGraphicsItem */*option*/, QWidget */*widget*/)
@@ -22,8 +22,9 @@ void QGeoSectionTitle::paint(QPainter *painter, const QStyleOptionGraphicsItem *
 
     painter->setPen(QPen(QBrush(Qt::white),1,Qt::SolidLine));
     painter->fillRect(titleBox,QBrush(DARK_RED));
-    painter->drawText(titleBox,Qt::AlignCenter,_title);
-
+    painter->drawText(titleBox,Qt::AlignLeft|Qt::AlignVCenter,_section->left()->name());
+    painter->drawText(titleBox,Qt::AlignRight|Qt::AlignVCenter,_section->right()->name());
+    painter->drawText(titleBox,Qt::AlignHCenter|Qt::AlignVCenter,QString::number(_section->distance()/100,'f',2));
     painter->setPen(QPen(QBrush(DARK_RED),1,Qt::SolidLine));
     painter->drawRect(boundingRect);
     painter->restore();

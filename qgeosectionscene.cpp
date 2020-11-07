@@ -36,7 +36,7 @@ QGeoSectionScene::QGeoSectionScene(QObject *parent ):QGraphicsScene(parent)
     topLayout->addItem(sectionsBoxWidget);
 
     _form = new QGraphicsWidget;
-    _form->setContentsMargins(8,8,0,0);
+    _form->setContentsMargins(8,8,8,8);
     _form->setLayout(topLayout);
 
     _form->setPos(0,0);
