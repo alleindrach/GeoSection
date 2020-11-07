@@ -13,10 +13,19 @@ class QGeoSectionScene : public QGraphicsScene
     Q_OBJECT
 public:
     QGeoSectionScene(QObject *parent  = nullptr);
-    void AddSection(QGeoSectionWidget *section, int pos=0,int stretchFactor=0);
+    ~QGeoSectionScene(){
+//        QList<QString >keys=_legends.keys();
+//        for(int i=0;i<keys.size();i++){
+//            delete _legends[keys[i]];
+//        }
+    };
+    void AddSection(QGeoSectionWidget *section, int pos=-1,int stretchFactor=0);
     QGraphicsWidget *  topWidget(){
         return _form;
     }
+   static  void addLegend(QString ,Qt::BrushStyle,QColor);
+   static QBrush&  getLegend(QString);
+   static QMap<QString,QBrush> _legends;
 private:
 
     QGraphicsProxyWidget * _wellTitle;
@@ -24,6 +33,7 @@ private:
     QGraphicsLinearLayout * _sectionLayout;
     QVector<QGeoSectionWidget *> _sections;
     int _titleHeight{0};
+
 };
 
 #endif // QGEOSECTIONSCENE_H
