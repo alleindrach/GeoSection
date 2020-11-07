@@ -20,8 +20,13 @@ public:
     QString title(){
         return _section->name();
     }
+
+    bool last() const;
+    void setLast(bool last);
+
 private :
     QSection *_section;
     int _height{0};
+    bool _last=false;
 };
 #endif // QGEOSECTIONTITLE_H

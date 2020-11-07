@@ -19,10 +19,10 @@
 #define TRANSPARENT_DARK_GREEN QColor(9,92,12,100)
 #define GEO_TITLE_ITEM_HEIGHT 16
 #define GEO_SECTION_MIN_WIDTH 10
-#define X_SCALE 100
-#define Y_SCALE 100
-#define GROUND_THICKNESS 10 //cm
-#define TICK_WIDTH 50
+#define X_SCALE 1
+#define Y_SCALE 1
+#define GROUND_THICKNESS 0.10 //m
+#define TICK_WIDTH 5
 #define DEFAULT_LEGEND "default"
 enum LayerMatch{
     One2One,
@@ -74,7 +74,7 @@ public:
 
     QGeoFormation* formation() const;
     void setFormation( QGeoFormation *formation);
-    void paint(QPainter * painter,int Align,float width);
+    void paint(QPainter *painter,QTransform &transform,int align, float width,bool last=false);
     bool fake() const;
     void setFake(bool fake);
 
@@ -168,7 +168,8 @@ public:
     void ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList<int>> & leftLinkedsampleMap,QMap<int ,QList<int>> & rightLinkedsampleMap,bool rev=false);
     void AddFormation(QGeoFormation* formation);
     void drawGround(QPainter * painter);
-    void drawGround(QPainter * painter,QTransform transform);
+    void drawOneGround(QPainter *painter, QTransform& transform2,QPolygonF & poly,QLineF & line);
+    void drawGround(QPainter * painter,QTransform& transform);
     float depth();
 private:
     QWellbore *_left;
@@ -204,7 +205,7 @@ public:
     void merge(QVector<QPointF> contour);
     void sub(QVector<QPointF> contour);
     void setDesc(const QString &desc);
-    void paint(QPainter * painter);
+    void paint(QPainter * painter, QTransform& transform2);
 private:
     QString _desc;
 };

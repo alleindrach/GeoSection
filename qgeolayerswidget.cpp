@@ -10,8 +10,8 @@ QGeoLayersWidget::QGeoLayersWidget( QSection  * section , QRectF ticks, QGraphic
 QSizeF QGeoLayersWidget::sizeHint(Qt::SizeHint which, const QSizeF &constraint) const
 {
     if(which==Qt::PreferredSize){
-
-        return QSizeF(300,500);
+        qDebug()<<"sec:"<<this->_section->name()<<",ow:"<<this->_section->width()<<",width:"<<this->_section->width()*10;
+        return QSizeF(this->_section->width()*10,500);
 
     }else {
         return QGraphicsWidget::sizeHint(which,constraint);
@@ -68,28 +68,39 @@ void QGeoLayersWidget::drawLayers(QPainter * painter)
     painter->setPen(QPen(QBrush(Qt::darkGreen),0.01,Qt::PenStyle::DashLine));
 
     QTransform  transform;
+
     qDebug()<<"xs:"<<xscale<<",ys:"<<yscale;
     qDebug()<<"l:"<<this->ticks().left()<<",t:"<<this->ticks().top()<<",r:"<<this->ticks().right()<<",b:"<<this->ticks().bottom();
     transform.scale(xscale,yscale);
     transform.translate(0-this->ticks().left(),0-this->ticks().top()+GROUND_THICKNESS);
-    painter->setWorldTransform(transform,true);
 
-    _section->drawGround(painter);
+    _section->drawGround(painter,transform);
 
     for(int i=0;i<_section->formations().size();i++){
-        _section->formations()[i]->paint(painter);
+        _section->formations()[i]->paint(painter,transform);
     }
 
     for(int i=0;i<_section->left()->samples.size();i++){
         QGeoSample * sample=_section->left()->samples[i];
-        sample->paint(painter,0,_section->width());
-//        sample->paint(painter,1,_section->width());
+        sample->paint(painter,transform,0,_section->width());
+        //        sample->paint(painter,1,_section->width());
     }
-    for(int i=0;i<_section->right()->samples.size();i++){
-        QGeoSample * sample=_section->right()->samples[i];
-//        sample->paint(painter,0,_section->width());
-        sample->paint(painter,1,_section->width());
+    if(this->last()){
+        for(int i=0;i<_section->right()->samples.size();i++){
+            QGeoSample * sample=_section->right()->samples[i];
+            sample->paint(painter,transform,1,_section->width());
+        }
     }
     painter->resetTransform();
     painter->setTransform(oriTransform,false);
+}
+
+bool QGeoLayersWidget::last() const
+{
+    return _last;
+}
+
+void QGeoLayersWidget::setLast(bool last)
+{
+    _last = last;
 }
