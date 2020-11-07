@@ -71,8 +71,8 @@ void QGeoLayersWidget::drawLayers(QPainter * painter)
 
     qDebug()<<"xs:"<<xscale<<",ys:"<<yscale;
     qDebug()<<"l:"<<this->ticks().left()<<",t:"<<this->ticks().top()<<",r:"<<this->ticks().right()<<",b:"<<this->ticks().bottom();
-    transform.scale(xscale,yscale);
-    transform.translate(0-this->ticks().left(),0-this->ticks().top()+GROUND_THICKNESS);
+    transform.scale(xscale,-yscale);
+    transform.translate(0-this->ticks().left(),-(this->ticks().bottom()+GROUND_THICKNESS));
 
     _section->drawGround(painter,transform);
 
