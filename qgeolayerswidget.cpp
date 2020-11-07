@@ -29,6 +29,8 @@ void QGeoLayersWidget::paint(QPainter *painter, const QStyleOptionGraphicsItem *
     painter->setPen(QPen(QBrush(DARK_RED),1,Qt::SolidLine));
     QRectF boundingRect=this->boundingRect();
     painter->drawRect(boundingRect);
+    painter->fillRect(boundingRect,Qt::white);
+    painter->setClipRect(boundingRect);
     drawLayers(painter);
     painter->restore();
 }
@@ -80,7 +82,13 @@ void QGeoLayersWidget::drawLayers(QPainter * painter)
 
     for(int i=0;i<_section->left()->samples.size();i++){
         QGeoSample * sample=_section->left()->samples[i];
-        sample->paint(painter);
+        sample->paint(painter,0,_section->width());
+//        sample->paint(painter,1,_section->width());
+    }
+    for(int i=0;i<_section->right()->samples.size();i++){
+        QGeoSample * sample=_section->right()->samples[i];
+//        sample->paint(painter,0,_section->width());
+        sample->paint(painter,1,_section->width());
     }
     painter->resetTransform();
     painter->setTransform(oriTransform,false);

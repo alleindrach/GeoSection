@@ -463,7 +463,7 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
                         left->samples[leftsampleIndex]->setFormation(formation);
                         //                        sampleLinks->AddLink(new QSampleLink(leftsampleIndex,Bottom,rightsampleIndex,Top));
                         //如果
-                        if(rightsampleIndex<leftLinkedsampleMap[nextLinkedsampleIndex].first()){
+                        if(rightsampleIndex<leftLinkedsampleMap[nextLinkedsampleIndex].first()-1){
                             onLeftSide=false;
                             rightsampleIndex++;
                         }else{
@@ -476,6 +476,61 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
                         verts.append(QPointF(0,left->samples[leftsampleIndex]->bottom()));
                         verts.append(QPointF(_distance,right->samples[rightsampleIndex]->top()));
                         verts.append(QPointF(_distance,right->samples[rightsampleIndex]->bottom()));
+
+                        QGeoFormation * formation=new QGeoFormation(verts,right->samples[rightsampleIndex]->desc(),this);
+                        this->AddFormation(formation);
+
+                        right->samples[rightsampleIndex]->setFormation(formation);
+                        //                        sampleLinks->AddLink(new QSampleLink(leftsampleIndex,Bottom,rightsampleIndex,Bottom));
+                        if(leftsampleIndex<nextLinkedsampleIndex-1){
+                            onLeftSide=true;
+                            leftsampleIndex++;
+                        }else{
+                            rightsampleIndex++;
+                        }
+
+                    }
+                    if ((onLeftSide && leftsampleIndex>=nextLinkedsampleIndex) || (!onLeftSide && rightsampleIndex>=leftLinkedsampleMap[nextLinkedsampleIndex].first())){
+                        break;
+                    }
+                }
+                cursampleIndex=nextLinkedsampleIndex;
+            }else if (diffOfRight>0 && rev && left->samples[cursampleIndex]->formation()==nullptr){
+
+                //若 diff>=2，则 A[i]与 B[n]和 B[m]之间的地层构成间断缺失模型，根据间断缺失 地层模型的尖灭规则选取尖灭点，依次连接地层 A[i]的上下分界点与其尖灭点;
+                //                针对地层间断缺失的情况，考虑到地层连接线的平缓，根据地层连线斜率的大小确定其尖灭点。
+                //                若地层与相邻钻孔中的地层构成间断缺失，则相邻钻孔中与其构成间断缺失的各地层的分界点都有可能是该地层的尖灭点。
+                //                分别计算该地层的上下分界点与上述各点的连线的 斜率，取两连线的较大值作为与各点平缓的参考值，取参考值最小的点作为尖灭点。
+                bool onLeftSide=true;//左侧
+                int leftsampleIndex=cursampleIndex;
+                int rightsampleIndex=leftLinkedsampleMap[prevLinkedsampleIndex].last();
+                //方法：以左侧为准，每次取左侧一个地层底部连到右侧顶部做尖灭，再反过来取右侧一个地层底部连接到左侧地层底部做尖灭，交替进行
+                while(true){
+                    if(onLeftSide){//左侧
+
+                        QVector<QPointF> verts;
+                        verts.append(QPointF(_distance,left->samples[leftsampleIndex]->top()));
+                        verts.append(QPointF(0,right->samples[rightsampleIndex]->bottom()));
+                        verts.append(QPointF(_distance,left->samples[leftsampleIndex]->bottom()));
+
+                        QGeoFormation * formation=new QGeoFormation(verts,left->samples[leftsampleIndex]->desc(),this);
+                        this->AddFormation(formation);
+                        left->samples[leftsampleIndex]->setFormation(formation);
+                        //                        sampleLinks->AddLink(new QSampleLink(leftsampleIndex,Bottom,rightsampleIndex,Top));
+                        //如果
+                        if(rightsampleIndex<leftLinkedsampleMap[nextLinkedsampleIndex].first()-1){
+                            onLeftSide=false;
+                            rightsampleIndex++;
+                        }else{
+                            leftsampleIndex++;
+                        }
+
+                    }else{
+
+                        QVector<QPointF> verts;
+                        verts.append(QPointF(_distance,left->samples[leftsampleIndex]->bottom()));
+                        verts.append(QPointF(0,right->samples[rightsampleIndex]->top()));
+                        verts.append(QPointF(0,right->samples[rightsampleIndex]->bottom()));
 
                         QGeoFormation * formation=new QGeoFormation(verts,right->samples[rightsampleIndex]->desc(),this);
                         this->AddFormation(formation);
@@ -513,24 +568,6 @@ float QSection::depth(){
 }
 void QSection::drawGround(QPainter *painter)
 {
-    //    QTransform oriTransform=painter->transform();
-    //    QRectF boundingRect=bounder;
-    //    //    QPointF scrollDiff=view->mapFromScene(QPointF(0,0));
-    //    //    ticks的 top对齐到y=0，ticks的bottom对齐到boundingRect的底部
-
-
-    //    float xscale = boundingRect.width()/this->_distance;
-    //    float yscale = boundingRect.height()/(this->Depth()+GROUND_THICKNESS*2);
-
-    //    painter->setPen(QPen(QBrush(Qt::darkGreen),0.01,Qt::PenStyle::DashLine));
-
-    //    QTransform  transform;
-    //    qDebug()<<"xs:"<<xscale<<",ys:"<<yscale;
-    //    qDebug()<<"l:"<<0<<",t:"<<this->top()<<",r:"<<_distance<<",b:"<<this->bottom();
-    //    transform.scale(xscale,yscale);
-    //    transform.translate(0,0-this->top()+GROUND_THICKNESS);
-    //    painter->setWorldTransform(transform,true);
-
     QPainterPath groundPath;
 
     QPolygonF ground;
@@ -571,8 +608,33 @@ void QSection::drawGround(QPainter *painter)
     painter->setPen(QPen(QBrush(Qt::black),2,Qt::SolidLine));
     painter->drawLine(QPointF(0,left()->bottom()),QPointF(distance(),right()->bottom()));
 
-    //    painter->resetTransform();
-    //    painter->setTransform(oriTransform,false);
+}
+
+void QSection::drawGround(QPainter *painter, QTransform transform)
+{
+    QPainterPath groundPath;
+
+    QPolygonF ground;
+
+    QTransform  transform2=transform.inverted();
+
+    groundPath.moveTo(QPointF(0,left()->top()-GROUND_THICKNESS));
+    groundPath.lineTo(QPointF(distance(),right()->top()-GROUND_THICKNESS));
+    groundPath.lineTo(QPointF(distance(),right()->top()));
+    groundPath.lineTo(QPointF(0,left()->top()));
+    groundPath.lineTo(QPointF(0,left()->top()-GROUND_THICKNESS));
+
+
+    QBrush brush=QBrush(Qt::BDiagPattern);
+
+    painter->setBrush(brush);
+    painter->setPen(QPen(QColor(79, 106, 25),1, Qt::SolidLine,
+                         Qt::FlatCap, Qt::MiterJoin));
+
+    painter->drawPath(transform2.map(groundPath));
+    painter->setPen(QPen(QBrush(Qt::black),2,Qt::SolidLine));
+    painter->drawLine(transform2.map(QPointF(0,left()->samples[0]->top())),transform2.map(QPointF(distance(),right()->samples[0]->top()))）;
+
 }
 
 void QSection::process(){
@@ -784,22 +846,41 @@ void QGeoSample::setFormation( QGeoFormation * formation)
     _formation = formation;
 }
 
-void QGeoSample::paint(QPainter *painter)
+void QGeoSample::paint(QPainter *painter,int align, float width)
 {
-    painter->setPen(QPen(QColor(Qt::black), 1, Qt::SolidLine,
+    //    painter->fillRect(QRectF(QPointF(0,this->top()-10),QPointF(300,this->top()+10)),Qt::white);
+    painter->setPen(QPen(QColor(DARK_RED), 1, Qt::SolidLine,
                          Qt::FlatCap, Qt::MiterJoin));
-    painter->drawLine(QPointF(0,this->top()),QPointF(TICK_WIDTH,this->top()));
+    if(align==0){
+        painter->drawLine(QPointF(0,this->top()),QPointF(TICK_WIDTH,this->top()));
+    }else{
+        painter->drawLine(QPointF(width-TICK_WIDTH,this->top()),QPointF(width,this->top()));
+    }
 
-    QFont font("宋体", 20, QFont::Thin, true);   //字体，大小，粗体，斜体
+
+    QFont font("宋体", 20, QFont::ExtraBold, true);   //字体，大小，粗体，斜体
     font.setCapitalization(QFont::Capitalize);   //设置字母大小写
     //    font.setUnderline(true); //设置下划线
     //    font.setOverline(true); //设置上划线
     // font.setLetterSpacing(QFont::AbsoluteSpacing, 10); //设置字符间的间距
     painter->setFont(font);
-    if(_seal==0){
-        painter->drawText(QPointF(TICK_WIDTH,this->top()+10),QString("%1\t%2").arg(QString::number(this->top()/100,'f',2)).arg(this->desc()));
+    if(_seal==0 ){
+        if(align==0){
+            painter->drawText(QPointF(TICK_WIDTH,this->top()+10),QString("%1").arg(QString::number(this->top()/100,'f',2)));
+            painter->drawText(QPointF(TICK_WIDTH,this->top()+28),QString("%1").arg(this->desc()));
+        }else{
+            painter->drawText(QPointF(width-TICK_WIDTH-60,this->top()+10),QString("%1").arg(QString::number(this->top()/100,'f',2)));
+            painter->drawText(QPointF(width-TICK_WIDTH-60,this->top()+28),QString("%1").arg(this->desc()));
+        }
+
+
     }else if (_seal==2){
-        painter->drawText(QPointF(TICK_WIDTH,this->top()),QString("%1").arg(QString::number(this->top()/100,'f',2)));
+        if(align==0){
+            painter->drawText(QPointF(TICK_WIDTH,this->top()),QString("%1").arg(QString::number(this->top()/100,'f',2)));
+        }else{
+            painter->drawText(QPointF(width-TICK_WIDTH-100,this->top()),QString("%1").arg(QString::number(this->top()/100,'f',2)));
+        }
+
         //        painter->drawText(QPointF(TICK_WIDTH,this->top()+10),QString("%1\t%2").arg(QString::number(this->top()/100,'f',2)).arg(this->desc()));
     }
 }
@@ -843,9 +924,9 @@ void QGeoFormation::paint(QPainter *painter)
 {
     //    QPainterPath formationPath;
     QTransform  transform;
-//    QPolygonF formationBorder=QPolygonF(verts);
+    //    QPolygonF formationBorder=QPolygonF(verts);
     //    formationPath.addPolygon(formationBorder);
-    transform.scale(2,2);
+    transform.scale(1.8,1.8);
     QBrush brush=QGeoSectionScene::getLegend(this->desc());
     brush.setTransform(transform);
     painter->setBrush(brush);

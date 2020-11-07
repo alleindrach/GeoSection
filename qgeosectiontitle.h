@@ -7,7 +7,7 @@ class QGeoSectionTitle : public QGraphicsWidget
 {
     Q_OBJECT
 public:
-    QGeoSectionTitle(QString title,  QGraphicsItem * parent);
+    QGeoSectionTitle(QSection *section,  QGraphicsItem * parent);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget) override;
@@ -18,12 +18,10 @@ public:
     }
     void setHeight(int v){ _height=v;}
     QString title(){
-        return _title;
+        return _section->name();
     }
 private :
-    QString _idWell;
-    QString _title;
-
+    QSection *_section;
     int _height{0};
 };
 #endif // QGEOSECTIONTITLE_H
