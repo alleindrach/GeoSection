@@ -18,8 +18,24 @@ bool  more_intersactions(const QSampleMatcher * s1,const QSampleMatcher * s2)
     }
     return (s1->intersactions.size() > s2->intersactions.size());
 }
+bool  more_intersactions_or_slop(const QSampleMatcher * s1,const QSampleMatcher * s2)
+{
+    if(s1->intersactions.size()==s2->intersactions.size()){
+        if(qAbs( s1->leftSampleNo-s1->rightSampleNo)>qAbs(s2->leftSampleNo-s2->rightSampleNo)){
+            return true;
+        }else if(qAbs( s1->leftSampleNo-s1->rightSampleNo)<qAbs(s2->leftSampleNo-s2->rightSampleNo)){
+            return false;
+        }else{
+            return s1->slop()>s2->slop();
+        }
+    }
+    return (s1->intersactions.size() > s2->intersactions.size());
+}
 bool shallow(const QSampleMatcher * s1,const QSampleMatcher *s2){
     return (s1->leftSampleNo<s2->leftSampleNo);
+}
+bool shallowRight(const QSampleMatcher * s1,const QSampleMatcher *s2){
+    return (s1->rightSampleNo<s2->rightSampleNo);
 }
 bool shallowsample(const QGeoSample *  s1,const QGeoSample *s2){
     return (s1->bottom() <s2->bottom());
@@ -159,7 +175,7 @@ void QGeoSample::setBottomLinked(const QList<QGeoSample *> &bottomLinked)
 }
 
 
-QSampleMatcher::QSampleMatcher(int ln,int rn,QObject *parent):QObject(parent),leftSampleNo(ln),rightSampleNo(rn){
+QSampleMatcher::QSampleMatcher(int ln,int rn,QSection *parent):QObject(parent),leftSampleNo(ln),rightSampleNo(rn),section(parent){
 
 }
 
@@ -180,6 +196,13 @@ void QSampleMatcher::PrintIntersactions()
     for(int i=0;i<keys.size();i++){
         qDebug()<<"\t"<<i<<"|"<<intersactions[keys[i]]->toStr();
     }
+}
+
+float QSampleMatcher::slop() const
+{
+    float leftDepth=this->section->left()->samples[this->leftSampleNo]->bottom();
+    float rightDepth=this->section->right()->samples[this->rightSampleNo]->bottom();
+    return qAbs(leftDepth-rightDepth);
 }
 QWellbore::QWellbore(QString n,QObject *parent):QObject(parent),_name(n){
 
@@ -255,7 +278,77 @@ QSection::QSection(QWellbore *left ,QWellbore * right,float distance,QObject *pa
     this->_left=new QWellbore(*left);
     this->_right=new QWellbore(*right);
 }
+// no 应为上一层
+void QSection::ProcessMissingFormations(QWellbore * left ,QWellbore * right,int leftNo ,int leftSize,int rightNo,int rightSize,bool rev){
+    if(rightSize==0 && leftSize>0){
+        for(int i=1;i<=leftSize;i++){
+            if(left->samples[leftNo+i]->formation()==nullptr){
+                QVector<QPointF> verts;
+                verts.append(QPointF(rev?this->_distance:0,left->samples[leftNo+i]->top()));
+                verts.append(QPointF(rev?0:this->_distance,right->samples[rightNo]->bottom()));
+                verts.append(QPointF(rev?this->_distance:0,left->samples[leftNo+i]->bottom()));
+                QGeoFormation * formation=new QGeoFormation(verts,left->samples[leftNo+i]->desc(),this);
+                this->AddFormation(formation);
+                left->samples[leftNo+i]->setFormation(formation);
+            }
+        }
+    }else if (leftSize>0 && rightSize>0 && !rev){
+        QMap<QString,QSampleMatcher*>samplePairs;
+        for(int i=0;i<=leftSize;i++){
+            for (int j=0;j<=rightSize;j++){
+                QSampleMatcher* con=new QSampleMatcher(i+leftNo,j+rightNo,this);
 
+                samplePairs[QString("%1-%2").arg(con->leftSampleNo).arg(con->rightSampleNo)]=con;
+            }
+        }
+        this->processConnections(samplePairs,more_intersactions_or_slop);
+        QList<QSampleMatcher*> connects=samplePairs.values();
+        std::sort(connects.begin(),connects.end(),shallow);
+        QMap<int,QList<QSampleMatcher*>> leftMaps;
+        for(int i=1;i<=leftSize;i++){
+            QList<QSampleMatcher*> matchers=leftMaps[leftNo+i];
+            for(int j=0;j<connects.size();j++){
+                if(leftNo+i-1==connects[j]->leftSampleNo){
+                    matchers.append(connects[j]);
+                    leftMaps[leftNo+1]=matchers;
+                }
+            }
+            std::sort(matchers.begin(),matchers.end(),shallowRight);
+        }
+        for(int i=0;i<leftMaps.size();i++){
+            QVector<QPointF> verts;
+            verts.append(QPointF(rev?this->_distance:0,left->samples[leftNo+i]->bottom()));
+            QSampleMatcher * x=leftMaps[leftNo+1+i].last();
+
+            verts.append(QPointF(rev?0:this->_distance,right->samples[leftMaps[leftNo+1+i].last()->rightSampleNo]->bottom()));
+            verts.append(QPointF(rev?this->_distance:0,left->samples[leftNo+i+1]->bottom()));
+            QGeoFormation * formation=new QGeoFormation(verts,left->samples[leftNo+i+1]->desc(),this);
+            this->AddFormation(formation);
+            left->samples[leftNo+i+1]->setFormation(formation);
+        }
+
+        QMap<int,QList<QSampleMatcher*>> rightMaps;
+        for(int i=1;i<=rightSize;i++){
+            QList<QSampleMatcher*> matchers=rightMaps[rightNo+i];
+            for(int j=0;j<connects.size();j++){
+                if(rightNo+i-1==connects[j]->rightSampleNo){
+                    matchers.append(connects[j]);
+                    rightMaps[rightNo+i]=matchers;
+                }
+            }
+            std::sort(matchers.begin(),matchers.end(),shallow);
+        }
+        for(int i=0;i<rightMaps.size();i++){
+            QVector<QPointF> verts;
+            verts.append(QPointF(!rev?this->_distance:0,right->samples[rightNo+i]->bottom()));
+            verts.append(QPointF(!rev?0:this->_distance,left->samples[rightMaps[rightNo+i+1].last()->leftSampleNo]->bottom()));
+            verts.append(QPointF(!rev?this->_distance:0,right->samples[rightNo+i+1]->bottom()));
+            QGeoFormation * formation=new QGeoFormation(verts,right->samples[rightNo+i+1]->desc(),this);
+            this->AddFormation(formation);
+            right->samples[rightNo+i+1]->setFormation(formation);
+        }
+    }
+}
 void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList<int>> & leftLinkedsampleMap,QMap<int ,QList<int>> & rightLinkedsampleMap,bool rev){
     int cursampleIndex=0;
     int prevLinkedsampleIndex=0;
@@ -445,60 +538,61 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
                 //                sampleLinks.append(new QSampleLink(cursampleIndex,Top, leftLinkedsampleMap[nextLinkedsampleIndex].first(),Top)); //2
                 //                sampleLinks.append(new QSampleLink(cursampleIndex,Bottom, leftLinkedsampleMap[nextLinkedsampleIndex].first(),Top));//3
             }else if (diffOfRight>0 && !rev){
+                this->ProcessMissingFormations(left,right,cursampleIndex-1,diffOfLeft-1,leftLinkedsampleMap[ prevLinkedsampleIndex].last(),diffOfRight-1,rev);
+                cursampleIndex+=diffOfLeft-1;
+                //                //若 diff>=2，则 A[i]与 B[n]和 B[m]之间的地层构成间断缺失模型，根据间断缺失 地层模型的尖灭规则选取尖灭点，依次连接地层 A[i]的上下分界点与其尖灭点;
+                //                //                针对地层间断缺失的情况，考虑到地层连接线的平缓，根据地层连线斜率的大小确定其尖灭点。
+                //                //                若地层与相邻钻孔中的地层构成间断缺失，则相邻钻孔中与其构成间断缺失的各地层的分界点都有可能是该地层的尖灭点。
+                //                //                分别计算该地层的上下分界点与上述各点的连线的 斜率，取两连线的较大值作为与各点平缓的参考值，取参考值最小的点作为尖灭点。
+                //                bool onLeftSide=true;//左侧
+                //                int leftsampleIndex=cursampleIndex;
+                //                int rightsampleIndex=leftLinkedsampleMap[prevLinkedsampleIndex].last();
+                //                //方法：以左侧为准，每次取左侧一个地层底部连到右侧顶部做尖灭，再反过来取右侧一个地层底部连接到左侧地层底部做尖灭，交替进行
+                //                while(true){
+                //                    if(onLeftSide){//左侧
 
-                //若 diff>=2，则 A[i]与 B[n]和 B[m]之间的地层构成间断缺失模型，根据间断缺失 地层模型的尖灭规则选取尖灭点，依次连接地层 A[i]的上下分界点与其尖灭点;
-                //                针对地层间断缺失的情况，考虑到地层连接线的平缓，根据地层连线斜率的大小确定其尖灭点。
-                //                若地层与相邻钻孔中的地层构成间断缺失，则相邻钻孔中与其构成间断缺失的各地层的分界点都有可能是该地层的尖灭点。
-                //                分别计算该地层的上下分界点与上述各点的连线的 斜率，取两连线的较大值作为与各点平缓的参考值，取参考值最小的点作为尖灭点。
-                bool onLeftSide=true;//左侧
-                int leftsampleIndex=cursampleIndex;
-                int rightsampleIndex=leftLinkedsampleMap[prevLinkedsampleIndex].last();
-                //方法：以左侧为准，每次取左侧一个地层底部连到右侧顶部做尖灭，再反过来取右侧一个地层底部连接到左侧地层底部做尖灭，交替进行
-                while(true){
-                    if(onLeftSide){//左侧
+                //                        QVector<QPointF> verts;
+                //                        verts.append(QPointF(0,left->samples[leftsampleIndex]->top()));
+                //                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->bottom()));
+                //                        verts.append(QPointF(0,left->samples[leftsampleIndex]->bottom()));
 
-                        QVector<QPointF> verts;
-                        verts.append(QPointF(0,left->samples[leftsampleIndex]->top()));
-                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->bottom()));
-                        verts.append(QPointF(0,left->samples[leftsampleIndex]->bottom()));
+                //                        QGeoFormation * formation=new QGeoFormation(verts,left->samples[leftsampleIndex]->desc(),this);
+                //                        this->AddFormation(formation);
+                //                        left->samples[leftsampleIndex]->setFormation(formation);
+                //                        //                        sampleLinks->AddLink(new QSampleLink(leftsampleIndex,Bottom,rightsampleIndex,Top));
+                //                        //如果
+                //                        if(rightsampleIndex<leftLinkedsampleMap[nextLinkedsampleIndex].first()-1){
+                //                            onLeftSide=false;
+                //                            rightsampleIndex++;
+                //                        }else{
+                //                            leftsampleIndex++;
+                //                        }
 
-                        QGeoFormation * formation=new QGeoFormation(verts,left->samples[leftsampleIndex]->desc(),this);
-                        this->AddFormation(formation);
-                        left->samples[leftsampleIndex]->setFormation(formation);
-                        //                        sampleLinks->AddLink(new QSampleLink(leftsampleIndex,Bottom,rightsampleIndex,Top));
-                        //如果
-                        if(rightsampleIndex<leftLinkedsampleMap[nextLinkedsampleIndex].first()-1){
-                            onLeftSide=false;
-                            rightsampleIndex++;
-                        }else{
-                            leftsampleIndex++;
-                        }
+                //                    }else{
 
-                    }else{
+                //                        QVector<QPointF> verts;
+                //                        verts.append(QPointF(0,left->samples[leftsampleIndex]->bottom()));
+                //                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->top()));
+                //                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->bottom()));
 
-                        QVector<QPointF> verts;
-                        verts.append(QPointF(0,left->samples[leftsampleIndex]->bottom()));
-                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->top()));
-                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->bottom()));
+                //                        QGeoFormation * formation=new QGeoFormation(verts,right->samples[rightsampleIndex]->desc(),this);
+                //                        this->AddFormation(formation);
 
-                        QGeoFormation * formation=new QGeoFormation(verts,right->samples[rightsampleIndex]->desc(),this);
-                        this->AddFormation(formation);
+                //                        right->samples[rightsampleIndex]->setFormation(formation);
+                //                        //                        sampleLinks->AddLink(new QSampleLink(leftsampleIndex,Bottom,rightsampleIndex,Bottom));
+                //                        if(leftsampleIndex<nextLinkedsampleIndex-1){
+                //                            onLeftSide=true;
+                //                            leftsampleIndex++;
+                //                        }else{
+                //                            rightsampleIndex++;
+                //                        }
 
-                        right->samples[rightsampleIndex]->setFormation(formation);
-                        //                        sampleLinks->AddLink(new QSampleLink(leftsampleIndex,Bottom,rightsampleIndex,Bottom));
-                        if(leftsampleIndex<nextLinkedsampleIndex-1){
-                            onLeftSide=true;
-                            leftsampleIndex++;
-                        }else{
-                            rightsampleIndex++;
-                        }
-
-                    }
-                    if ((onLeftSide && leftsampleIndex>=nextLinkedsampleIndex) || (!onLeftSide && rightsampleIndex>=leftLinkedsampleMap[nextLinkedsampleIndex].first())){
-                        break;
-                    }
-                }
-                cursampleIndex=nextLinkedsampleIndex;
+                //                    }
+                //                    if ((onLeftSide && leftsampleIndex>=nextLinkedsampleIndex) || (!onLeftSide && rightsampleIndex>=leftLinkedsampleMap[nextLinkedsampleIndex].first())){
+                //                        break;
+                //                    }
+                //                }
+                //                cursampleIndex=nextLinkedsampleIndex;
             }else if (diffOfRight>0 && rev && left->samples[cursampleIndex]->formation()==nullptr){
 
                 //若 diff>=2，则 A[i]与 B[n]和 B[m]之间的地层构成间断缺失模型，根据间断缺失 地层模型的尖灭规则选取尖灭点，依次连接地层 A[i]的上下分界点与其尖灭点;
@@ -656,21 +750,11 @@ void QSection::drawGround(QPainter *painter, QTransform& transform2)
     this->drawOneGround(painter,transform2,ground2,bottom2);
 
 }
-
-void QSection::process(){
-    //    (1)将相邻两钻孔中属性相同的地层层底进行连接。
-    this->_left->seal();
-    this->_right->seal();
-    for(int i=0;i<_left->samples.size();i++){
-        for (int j=0;j<_right->samples.size();j++){
-            if(_left->samples[i]->desc().compare(_right->samples[j]->desc(),Qt::CaseInsensitive)==0){
-                QSampleMatcher* con=new QSampleMatcher(i,j,this);
-                this->samplePairs[QString("%1-%2").arg(con->leftSampleNo).arg(con->rightSampleNo)]=con;
-            }
-        }
+void calInteractions(QMap<QString,QSampleMatcher*> &  samplePairs){
+    QList<QSampleMatcher*> connects=samplePairs.values();
+    for(int i=0;i<connects.size();i++){
+        connects[i]->intersactions.clear();
     }
-    QList<QSampleMatcher*> connects=this->samplePairs.values();
-    //    (2.1)统计各连接线与其余连线的交点数目
     for(int i=0;i<connects.size();i++){
         QSampleMatcher* conA=connects[i];
         for(int j=i+1;j<connects.size();j++){
@@ -689,9 +773,14 @@ void QSection::process(){
             }
         }
     }
+}
+void QSection::processConnections(QMap<QString,QSampleMatcher*> &  samplePairs,connector_comparor c){
+    QList<QSampleMatcher*> connects=samplePairs.values();
+    //    (2.1)统计各连接线与其余连线的交点数目
+    calInteractions(samplePairs);
     //排序
     while(true){
-        std::sort(connects.begin(), connects.end(), more_intersactions);
+        std::sort(connects.begin(), connects.end(), c);
         if(connects.size()>0 && connects[0]->intersactions.isEmpty()){
             //没有任何相交直线了
             break;
@@ -701,12 +790,29 @@ void QSection::process(){
         //移除交点最多的一个
         QString mostInterSecConKey=QString("%1-%2").arg(connects[0]->leftSampleNo).arg(connects[0]->rightSampleNo);
         qDebug()<<"mostInterSecConKey"<<":"<<mostInterSecConKey;
-        this->samplePairs.remove(mostInterSecConKey);
-        qDebug()<<"left:"<<this->samplePairs.size();
-        connects=this->samplePairs.values();
+        samplePairs.remove(mostInterSecConKey);
+        qDebug()<<"left:"<<samplePairs.size();
+        calInteractions(samplePairs);
+        connects=samplePairs.values();
 
     }
-    connects=this->samplePairs.values();
+}
+void QSection::process(){
+    //    (1)将相邻两钻孔中属性相同的地层层底进行连接。
+    QMap<QString,QSampleMatcher*>samplePairs;
+
+    this->_left->seal();
+    this->_right->seal();
+    for(int i=0;i<_left->samples.size();i++){
+        for (int j=0;j<_right->samples.size();j++){
+            if(_left->samples[i]->desc().compare(_right->samples[j]->desc(),Qt::CaseInsensitive)==0){
+                QSampleMatcher* con=new QSampleMatcher(i,j,this);
+                samplePairs[QString("%1-%2").arg(con->leftSampleNo).arg(con->rightSampleNo)]=con;
+            }
+        }
+    }
+    this->processConnections(samplePairs,more_intersactions);
+    QList<QSampleMatcher*> connects=samplePairs.values();
     std::sort(connects.begin(),connects.end(),shallow);
     qDebug()<<"Section:"<<this->name();
     for(int i=0;i<connects.size();i++){
@@ -869,12 +975,12 @@ void QGeoSample::paint(QPainter *painter,QTransform &transform,int align, float 
     painter->setPen(QPen(QColor(DARK_RED), 1, Qt::SolidLine,
                          Qt::FlatCap, Qt::MiterJoin));
     if(align==0){
-        QPointF pos=transform.map(QPointF(0,this->top()));
+        QPointF pos=transform.map(QPointF(0,this->bottom()));
         QPointF pos2=pos;
         pos2+=QPointF(TICK_WIDTH,0);
         painter->drawLine(pos,pos2);
     }else{
-        QPointF pos=transform.map(QPointF(width,this->top()));
+        QPointF pos=transform.map(QPointF(width,this->bottom()));
         QPointF pos2=pos;
         pos2-=QPointF(TICK_WIDTH,0);
         painter->drawLine(pos,pos2);
@@ -887,25 +993,26 @@ void QGeoSample::paint(QPainter *painter,QTransform &transform,int align, float 
     //    font.setOverline(true); //设置上划线
     // font.setLetterSpacing(QFont::AbsoluteSpacing, 10); //设置字符间的间距
     painter->setFont(font);
-    QRectF txtBounder=QRectF(transform.map(QPointF(0,this->top()))+=QPointF(TICK_WIDTH,-5),
-                             transform.map(QPointF(width,this->top()))+=QPointF(-TICK_WIDTH,5));
-    QRectF txtNextBounder=txtBounder;
-    txtNextBounder.adjust(0,10,0,10);
+    QRectF txtBounder=QRectF(transform.map(QPointF(0,this->bottom()))+=QPointF(TICK_WIDTH,-5),
+                             transform.map(QPointF(width,this->bottom()))+=QPointF(-TICK_WIDTH,5));
+    QRectF txtDescBounder=QRectF(transform.map(QPointF(0,this->bottom()))+=QPointF(TICK_WIDTH,0),
+                             transform.map(QPointF(width,this->top()))+=QPointF(-TICK_WIDTH,0));
+//    txtNextBounder.adjust(0,10,0,10);
     if(_seal==0 ){
         if(align==0){
-            painter->drawText(txtBounder,Qt::AlignLeft|Qt::AlignTop,QString("%1").arg(QString::number(this->top()/Y_SCALE,'f',2)));
-            painter->drawText(txtNextBounder,Qt::AlignLeft|Qt::AlignTop,QString("%1").arg(this->desc()));
+            painter->drawText(txtBounder,Qt::AlignLeft|Qt::AlignTop,QString("%1").arg(QString::number(this->bottom()/Y_SCALE,'f',2)));
+            painter->drawText(txtDescBounder,Qt::AlignLeft|Qt::AlignVCenter,QString("%1").arg(this->desc()));
         }else{
-            painter->drawText(txtBounder,Qt::AlignRight|Qt::AlignTop,QString("%1").arg(QString::number(this->top()/Y_SCALE,'f',2)));
-            painter->drawText(txtNextBounder,Qt::AlignRight|Qt::AlignTop,QString("%1").arg(this->desc()));
+            painter->drawText(txtBounder,Qt::AlignRight|Qt::AlignTop,QString("%1").arg(QString::number(this->bottom()/Y_SCALE,'f',2)));
+            painter->drawText(txtDescBounder,Qt::AlignRight|Qt::AlignVCenter,QString("%1").arg(this->desc()));
         }
 
     }else if (_seal==2){
         if(align==0){
-            painter->drawText(txtBounder,Qt::AlignLeft|Qt::AlignTop,QString("%1").arg(QString::number(this->top()/Y_SCALE,'f',2)));
+            painter->drawText(txtBounder,Qt::AlignLeft|Qt::AlignTop,QString("%1").arg(QString::number(this->bottom()/Y_SCALE,'f',2)));
 
         }else{
-           painter->drawText(txtBounder,Qt::AlignRight|Qt::AlignTop,QString("%1").arg(QString::number(this->top()/Y_SCALE,'f',2)));
+            painter->drawText(txtBounder,Qt::AlignRight|Qt::AlignTop,QString("%1").arg(QString::number(this->bottom()/Y_SCALE,'f',2)));
         }
     }
     painter->restore();

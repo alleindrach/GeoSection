@@ -42,6 +42,7 @@ extern double rad(double d) ;
 extern double getDistance(double lat1, double lng1, double lat2, double lng2);
 class QGeoFormation;
 class QSampleLinks;
+class QSection;
 class QGeoSample : public QObject{
     Q_OBJECT
 public:
@@ -96,15 +97,18 @@ Q_DECLARE_METATYPE(QGeoSample*);
 class QSampleMatcher:public QObject{
     Q_OBJECT
 public:
-    explicit QSampleMatcher(int ln=0,int rn=0,QObject *parent=nullptr);
+    explicit QSampleMatcher(int ln=0,int rn=0,QSection *parent=nullptr);
     int leftSampleNo;
     int rightSampleNo;
     QMap<int ,QSampleMatcher*> intersactions;
     QString toStr();
-
+    QSection * section;
     void PrintIntersactions();
+    float slop() const;
 };
 Q_DECLARE_METATYPE(QSampleMatcher*);
+
+typedef bool  (*connector_comparor)( const QSampleMatcher * arg1, const QSampleMatcher * arg2);
 
 class QSampleLink:public QObject{
     Q_OBJECT
@@ -167,6 +171,8 @@ public:
 
     QList<QGeoFormation *> formations() const;
     void setFormations(const QList<QGeoFormation *> &formations);
+    void ProcessMissingFormations(QWellbore * left ,QWellbore * right,int leftNo ,int leftSize,int rightNo,int rightSize,bool rev);
+    void processConnections(QMap<QString,QSampleMatcher*> &  samplePairs,connector_comparor);
     void ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList<int>> & leftLinkedsampleMap,QMap<int ,QList<int>> & rightLinkedsampleMap,bool rev=false);
     void AddFormation(QGeoFormation* formation);
     void drawGround(QPainter * painter);
@@ -178,7 +184,7 @@ private:
     QWellbore *_right;
     float _distance;
     //    QList<QLayerConnect*> connects;
-    QMap<QString,QSampleMatcher*>samplePairs;
+//    QMap<QString,QSampleMatcher*>samplePairs;
     QList<QSampleLink *>  sampleLinks;
     QList<QGeoFormation*> _formations;
 };
