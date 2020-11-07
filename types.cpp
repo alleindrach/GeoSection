@@ -363,6 +363,10 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
             }
             int diffOfRight =leftLinkedsampleMap[nextLinkedsampleIndex].first()-leftLinkedsampleMap[prevLinkedsampleIndex].last();//右侧的地层间隔
             int diffOfLeft=nextLinkedsampleIndex-prevLinkedsampleIndex;//左侧地层间隔
+            if(prevLinkedsampleIndex>=cursampleIndex){
+                cursampleIndex++;
+                continue;
+            }
             if (diffOfRight==0){
                 //右侧尖灭地层
 
@@ -553,8 +557,8 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
             }else{
                 cursampleIndex++;
             }
-
-            prevLinkedsampleIndex=nextLinkedsampleIndex;
+            if(cursampleIndex>nextLinkedsampleIndex)
+                prevLinkedsampleIndex=nextLinkedsampleIndex;
         }
     }
 }
@@ -949,7 +953,7 @@ void QGeoFormation::paint(QPainter *painter,QTransform& transform)
     QTransform  brushTransform;
     //    QPolygonF formationBorder=QPolygonF(verts);
     //    formationPath.addPolygon(formationBorder);
-    brushTransform.scale(8,8);
+    brushTransform.scale(BRUSH_X_SCALE,BRUSH_Y_SCALE);
     QBrush brush=QGeoSectionScene::getLegend(this->desc());
     brush.setTransform(brushTransform);
     painter->setBrush(brush);
