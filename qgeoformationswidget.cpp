@@ -1,13 +1,13 @@
-#include "qgeolayerswidget.h"
+#include "qgeoformationswidget.h"
 #include <types.h>
 #include <qgeosectioncontent.h>
 #include <qgeosectionscene.h>
-QGeoLayersWidget::QGeoLayersWidget( QSection  * section , QRectF ticks, QGraphicsItem *parent):
+QGeoFormationsWidget::QGeoFormationsWidget( QSection  * section , QRectF ticks, QGraphicsItem *parent):
     QGeoSectionContent(ticks,parent),_section(section)
 {
     this->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 }
-QSizeF QGeoLayersWidget::sizeHint(Qt::SizeHint which, const QSizeF &constraint) const
+QSizeF QGeoFormationsWidget::sizeHint(Qt::SizeHint which, const QSizeF &constraint) const
 {
     if(which==Qt::PreferredSize){
         qDebug()<<"sec:"<<this->_section->name()<<",ow:"<<this->_section->width()<<",width:"<<this->_section->width()*10;
@@ -17,7 +17,7 @@ QSizeF QGeoLayersWidget::sizeHint(Qt::SizeHint which, const QSizeF &constraint) 
         return QGraphicsWidget::sizeHint(which,constraint);
     }
 }
-void QGeoLayersWidget::paint(QPainter *painter, const QStyleOptionGraphicsItem */*option*/, QWidget */*widget*/)
+void QGeoFormationsWidget::paint(QPainter *painter, const QStyleOptionGraphicsItem */*option*/, QWidget */*widget*/)
 {
     painter->save();
     //    drawGrid(painter);
@@ -35,7 +35,7 @@ void QGeoLayersWidget::paint(QPainter *painter, const QStyleOptionGraphicsItem *
     painter->restore();
 }
 
-QString QGeoLayersWidget::dataAtPos(QPointF pos)
+QString QGeoFormationsWidget::dataAtPos(QPointF pos)
 {
     //    QRectF boundingRect=this->boundingRect();
     //    QString result;
@@ -53,7 +53,7 @@ QString QGeoLayersWidget::dataAtPos(QPointF pos)
     return "";
 }
 
-void QGeoLayersWidget::drawLayers(QPainter * painter)
+void QGeoFormationsWidget::drawLayers(QPainter * painter)
 {
 
     QTransform oriTransform=painter->transform();
@@ -95,12 +95,12 @@ void QGeoLayersWidget::drawLayers(QPainter * painter)
     painter->setTransform(oriTransform,false);
 }
 
-bool QGeoLayersWidget::last() const
+bool QGeoFormationsWidget::last() const
 {
     return _last;
 }
 
-void QGeoLayersWidget::setLast(bool last)
+void QGeoFormationsWidget::setLast(bool last)
 {
     _last = last;
 }

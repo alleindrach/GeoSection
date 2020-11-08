@@ -1,16 +1,16 @@
-#include "qgeosectiontitle.h"
-#include <QGraphicsWidget>
-#include "QGraphicsScene"
-#include <QGraphicsLayoutItem>
-#include <QSizeF>
-#include <QPainter>
+#include "qgeoaltitudetitle.h"
 
-QGeoSectionTitle::QGeoSectionTitle(QSection *section, QGraphicsItem *parent):QGeoTitle(parent),_section(section)
+#include <QObject>
+#include <QGraphicsItem>
+#include <QPainter>
+#include <types.h>
+#include <QGraphicsWidget>
+QGeoAltitudeTitle::QGeoAltitudeTitle(QRectF ticks, QGraphicsItem *parent):QGeoTitle(parent),_ticks(ticks)
 {
 
 }
 
-void QGeoSectionTitle::paint(QPainter *painter, const QStyleOptionGraphicsItem */*option*/, QWidget */*widget*/)
+void QGeoAltitudeTitle::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     painter->save();
     QRectF boundingRect=this->boundingRect();
@@ -19,20 +19,15 @@ void QGeoSectionTitle::paint(QPainter *painter, const QStyleOptionGraphicsItem *
     font.setPixelSize(8);
     font.setBold(true);
     painter->setFont(font);
-
     painter->setPen(QPen(QBrush(Qt::white),1,Qt::SolidLine));
     painter->fillRect(titleBox,QBrush(DARK_RED));
-    painter->drawText(titleBox,Qt::AlignLeft|Qt::AlignVCenter,_section->left()->name());
-    if(this->last()){
-        painter->drawText(titleBox,Qt::AlignRight|Qt::AlignVCenter,_section->right()->name());
-    }
-    painter->drawText(titleBox,Qt::AlignHCenter|Qt::AlignVCenter,QString::number(_section->distance()/X_SCALE,'f',2));
+    painter->drawText(titleBox,Qt::AlignCenter,this->title());
     painter->setPen(QPen(QBrush(DARK_RED),1,Qt::SolidLine));
     painter->drawRect(boundingRect);
     painter->restore();
 }
 
-QSizeF QGeoSectionTitle::sizeHint(Qt::SizeHint which, const QSizeF &constraint) const
+QSizeF QGeoAltitudeTitle::sizeHint(Qt::SizeHint which, const QSizeF &constraint) const
 {
     if(which==Qt::PreferredSize){
         int height=_height;
@@ -52,14 +47,4 @@ QSizeF QGeoSectionTitle::sizeHint(Qt::SizeHint which, const QSizeF &constraint) 
     }else {
         return QGraphicsWidget::sizeHint(which,constraint);
     }
-}
-
-bool QGeoSectionTitle::last() const
-{
-    return _last;
-}
-
-void QGeoSectionTitle::setLast(bool last)
-{
-    _last = last;
 }

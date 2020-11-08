@@ -2,7 +2,9 @@
 #include "ui_mainwindow.h"
 #include "types.h"
 #include "qgeosectionscene.h"
-#include "qgeolayerswidget.h"
+#include "qgeoformationswidget.h"
+#include "qgeoaltitudewidget.h"
+#include "qgeoaltitudetitle.h"
 #include <QVector>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -100,9 +102,17 @@ MainWindow::MainWindow(QWidget *parent)
     QGeoSectionScene::addLegend("沙泥",Qt::Dense7Pattern,TRANSPARENT_DARK_GREEN);
     QGeoSectionScene::addLegend(DEFAULT_LEGEND ,Qt::Dense6Pattern,TRANSPARENT_DARK_GREEN);
 
+    QGeoAltitudeWidget * content=new QGeoAltitudeWidget(QRectF(QPointF(0,top),QPointF(50,bottom)));
+    QGeoAltitudeTitle * title=new QGeoAltitudeTitle(QRectF(QPointF(0,top),QPointF(50,bottom)),((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
+    QGeoSectionWidget * track=new QGeoSectionWidget(title,content,((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
+
+//        connect(track,&QGeoSectionWidget::hoverData,this,&MainWindow::on_hover_data);
+//        sectionWigets.append(track);
+    scene->AddSection(track,-1,1);
+
     for(int i=0;i<sections.length();i++){
         QSection *sec=sections[i];
-        QGeoLayersWidget * content=new QGeoLayersWidget(sec,QRectF(QPointF(0,top),QPointF(sec->distance(),bottom)));
+        QGeoFormationsWidget * content=new QGeoFormationsWidget(sec,QRectF(QPointF(0,top),QPointF(sec->distance(),bottom)));
         content->setLast(i==sections.length()-1);
         QGeoSectionTitle * title=new QGeoSectionTitle(sec,((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
         title->setLast(i==sections.length()-1);

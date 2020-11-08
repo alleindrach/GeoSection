@@ -13,7 +13,7 @@
 //#include <GraphicsItemFlag>
 #include <QGraphicsLayoutItem>
 
-QGeoSectionWidget::QGeoSectionWidget(QGeoSectionTitle *title, QGeoSectionContent *content, QGraphicsItem *parent):
+QGeoSectionWidget::QGeoSectionWidget(QGeoTitle *title, QGeoSectionContent *content, QGraphicsItem *parent):
     QGraphicsWidget(parent),_title(title),_content(content)
 {
 
@@ -40,7 +40,7 @@ QGeoSectionWidget::QGeoSectionWidget(QGeoSectionTitle *title, QGeoSectionContent
 
 void QGeoSectionWidget::on_hover_data(QPointF pos,  QString des)
 {
-    emit this->hoverData(pos,_title->title(),des);
+//    emit this->hoverData(pos,_title->title(),des);
 }
 
 

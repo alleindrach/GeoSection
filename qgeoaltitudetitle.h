@@ -1,14 +1,17 @@
-#ifndef QGEOSECTIONTITLE_H
-#define QGEOSECTIONTITLE_H
+#ifndef QALTITUDETITLE_H
+#define QALTITUDETITLE_H
 
-#include <QGraphicsWidget>
+#include <QObject>
+#include <QGraphicsItem>
+#include <QPainter>
 #include <types.h>
+#include <QGraphicsWidget>
 #include <qgeotitle.h>
-class QGeoSectionTitle : public QGeoTitle
+class QGeoAltitudeTitle: public QGeoTitle
 {
     Q_OBJECT
 public:
-    QGeoSectionTitle(QSection *section,  QGraphicsItem * parent);
+    QGeoAltitudeTitle(QRectF ticks,  QGraphicsItem * parent);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget) override;
@@ -19,15 +22,13 @@ public:
     }
     void setHeight(int v){ _height=v;}
     QString title(){
-        return _section->name();
+        return "高程";
     }
 
-    bool last() const;
-    void setLast(bool last);
-
 private :
-    QSection *_section;
+    QRectF _ticks;
     int _height{0};
-    bool _last=false;
+
 };
-#endif // QGEOSECTIONTITLE_H
+
+#endif // QALTITUDETITLE_H
