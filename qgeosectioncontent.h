@@ -45,6 +45,7 @@ private:
     //    QRectF  _boundingRect;
     bool _showGrid{true};
     QSize _gridSize{20,20};
+protected:
     QRectF _ticks;//xy轴的刻度范围
 public:
 signals:

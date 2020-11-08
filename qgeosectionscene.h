@@ -31,6 +31,7 @@ private:
     QGraphicsProxyWidget * _wellTitle;
     QGraphicsWidget  * _form;
     QGraphicsLinearLayout * _sectionLayout;
+    QGraphicsLinearLayout * _sectionLayoutOuter;
     QVector<QGeoSectionWidget *> _sections;
     int _titleHeight{0};
 

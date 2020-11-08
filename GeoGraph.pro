@@ -19,20 +19,26 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    qgeolayerswidget.cpp \
+    qgeoaltitudetitle.cpp \
+    qgeoaltitudewidget.cpp \
+    qgeoformationswidget.cpp \
     qgeosectioncontent.cpp \
     qgeosectionscene.cpp \
     qgeosectiontitle.cpp \
     qgeosectionwidget.cpp \
+    qgeotitle.cpp \
     types.cpp
 
 HEADERS += \
     mainwindow.h \
-    qgeolayerswidget.h \
+    qgeoaltitudetitle.h \
+    qgeoaltitudewidget.h \
+    qgeoformationswidget.h \
     qgeosectioncontent.h \
     qgeosectionscene.h \
     qgeosectiontitle.h \
     qgeosectionwidget.h \
+    qgeotitle.h \
     types.h
 
 FORMS += \

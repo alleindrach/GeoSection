@@ -6,11 +6,12 @@
 #include <types.h>
 #include <qgeosectiontitle.h>
 #include <qgeosectioncontent.h>
+#include <qgeotitle.h>
 class QGeoSectionWidget:public QGraphicsWidget
 {
     Q_OBJECT
 public:
-    QGeoSectionWidget(QGeoSectionTitle * title,QGeoSectionContent * content,QGraphicsItem * parent=nullptr);
+    QGeoSectionWidget(QGeoTitle * title,QGeoSectionContent * content,QGraphicsItem * parent=nullptr);
     int titleContentHight(){
         return _title->contentheight();
     }
@@ -22,7 +23,7 @@ signals:
 public slots:
     void on_hover_data(QPointF pos,QString des);
 private:
-    QGeoSectionTitle* _title{nullptr};
+    QGeoTitle* _title{nullptr};
     QGeoSectionContent * _content{nullptr};
 
 };

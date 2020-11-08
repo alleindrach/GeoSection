@@ -32,8 +32,18 @@ QGeoSectionScene::QGeoSectionScene(QObject *parent ):QGraphicsScene(parent)
     _sectionLayout->setItemSpacing(0,0);
 
     sectionsBoxWidget->setLayout(_sectionLayout);
+
+
+    _sectionLayoutOuter =new QGraphicsLinearLayout;
+    _sectionLayoutOuter->setOrientation(Qt::Vertical);
+    _sectionLayoutOuter->setContentsMargins(0,0,0,0);
+    _sectionLayoutOuter->setItemSpacing(0,0);
+
+    QGraphicsWidget * sectionsOuterBoxWidget = new QGraphicsWidget;
+    sectionsOuterBoxWidget->setLayout(_sectionLayoutOuter);
+    _sectionLayoutOuter->addItem(sectionsBoxWidget);
 //    sectionsBoxWidget->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    topLayout->addItem(sectionsBoxWidget);
+    topLayout->addItem(sectionsOuterBoxWidget);
 
     _form = new QGraphicsWidget;
     _form->setContentsMargins(8,8,8,8);
