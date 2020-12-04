@@ -4,6 +4,10 @@
 #include <QGraphicsWidget>
 #include <QGraphicsObject>
 #include <QPainter>
+
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
+
+
 QGeoSectionContent::QGeoSectionContent(QRectF ticks, QGraphicsItem *parent):
     QGraphicsWidget(parent),_ticks(ticks)
 {

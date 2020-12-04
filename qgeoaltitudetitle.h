@@ -1,5 +1,6 @@
 #ifndef QALTITUDETITLE_H
 #define QALTITUDETITLE_H
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
 
 #include <QObject>
 #include <QGraphicsItem>
@@ -7,6 +8,7 @@
 #include <types.h>
 #include <QGraphicsWidget>
 #include <qgeotitle.h>
+//高程标题栏
 class QGeoAltitudeTitle: public QGeoTitle
 {
     Q_OBJECT

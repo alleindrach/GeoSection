@@ -4,7 +4,7 @@
 #include <QGraphicsLayoutItem>
 #include <QSizeF>
 #include <QPainter>
-
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
 QGeoSectionTitle::QGeoSectionTitle(QSection *section, QGraphicsItem *parent):QGeoTitle(parent),_section(section)
 {
 

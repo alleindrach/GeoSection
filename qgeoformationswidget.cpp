@@ -2,6 +2,10 @@
 #include <types.h>
 #include <qgeosectioncontent.h>
 #include <qgeosectionscene.h>
+
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
+
+
 QGeoFormationsWidget::QGeoFormationsWidget( QSection  * section , QRectF ticks, QGraphicsItem *parent):
     QGeoSectionContent(ticks,parent),_section(section)
 {
@@ -29,6 +33,7 @@ void QGeoFormationsWidget::paint(QPainter *painter, const QStyleOptionGraphicsIt
     painter->setPen(QPen(QBrush(DARK_RED),1,Qt::SolidLine));
     QRectF boundingRect=this->boundingRect();
     painter->drawRect(boundingRect);
+    boundingRect.adjust(1,1,-1,-1);
     painter->fillRect(boundingRect,Qt::white);
     painter->setClipRect(boundingRect);
     drawLayers(painter);

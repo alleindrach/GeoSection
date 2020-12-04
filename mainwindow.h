@@ -1,5 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
+
 
 #include <QMainWindow>
 #include <QLabel>
@@ -18,6 +20,8 @@ public:
 private slots:
     void on_actionOpen_triggered();
 //    void on_hover_data(QPointF pos,QString comp,QString des);
+    void on_actionExport_triggered();
+
 private:
     Ui::MainWindow *ui;
 

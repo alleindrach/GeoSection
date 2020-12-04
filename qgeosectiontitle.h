@@ -1,9 +1,10 @@
 #ifndef QGEOSECTIONTITLE_H
 #define QGEOSECTIONTITLE_H
-
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
 #include <QGraphicsWidget>
 #include <types.h>
 #include <qgeotitle.h>
+//相邻井眼间剖面图标题栏
 class QGeoSectionTitle : public QGeoTitle
 {
     Q_OBJECT

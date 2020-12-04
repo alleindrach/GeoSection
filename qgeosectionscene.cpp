@@ -1,6 +1,9 @@
 #include "qgeosectionscene.h"
 #include <QLabel>
 #include <QGraphicsScene>
+
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
+
 QMap<QString,QBrush> QGeoSectionScene::_legends=QMap<QString,QBrush>();
 QGeoSectionScene::QGeoSectionScene(QObject *parent ):QGraphicsScene(parent)
 {

@@ -1,6 +1,7 @@
 #ifndef QGEOALTITUDEWIDGET_H
 #define QGEOALTITUDEWIDGET_H
 
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
 
 #include "types.h"
 #include <QPainter>
@@ -8,7 +9,7 @@
 #include <QStyleOptionGraphicsItem>
 #include <qgeosectioncontent.h>
 
-
+//高程的标注栏
 class QGeoAltitudeWidget:public QGeoSectionContent
 {
         Q_OBJECT

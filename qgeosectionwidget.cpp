@@ -12,7 +12,7 @@
 #include <QGraphicsItem>
 //#include <GraphicsItemFlag>
 #include <QGraphicsLayoutItem>
-
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
 QGeoSectionWidget::QGeoSectionWidget(QGeoTitle *title, QGeoSectionContent *content, QGraphicsItem *parent):
     QGraphicsWidget(parent),_title(title),_content(content)
 {

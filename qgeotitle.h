@@ -2,6 +2,7 @@
 #define QGEOTITLE_H
 #include <QGraphicsWidget>
 #include <types.h>
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
 
 class QGeoTitle :public QGraphicsWidget
 {

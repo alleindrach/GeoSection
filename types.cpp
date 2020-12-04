@@ -7,6 +7,9 @@
 #include <QPolygonF>
 #include <QPolygon>
 #include <qgeosectionscene.h>
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
+
+//排序比较函数，比较两个地层匹配连线谁的交点更多
 bool  more_intersactions(const QSampleMatcher * s1,const QSampleMatcher * s2)
 {
     if(s1->intersactions.size()==s2->intersactions.size()){
@@ -18,6 +21,7 @@ bool  more_intersactions(const QSampleMatcher * s1,const QSampleMatcher * s2)
     }
     return (s1->intersactions.size() > s2->intersactions.size());
 }
+//排序比较器，比较两个地层匹配连线谁的交点更多，如果相同，再比较其斜率，斜率不是绝对斜率，而是按照层位计算的斜率，比如跨两个地层的连线就比跨一个地层的连线斜率大
 bool  more_intersactions_or_slop(const QSampleMatcher * s1,const QSampleMatcher * s2)
 {
     if(s1->intersactions.size()==s2->intersactions.size()){
@@ -31,42 +35,47 @@ bool  more_intersactions_or_slop(const QSampleMatcher * s1,const QSampleMatcher 
     }
     return (s1->intersactions.size() > s2->intersactions.size());
 }
+//比较两个地层匹配连线谁更浅，按照左侧井眼层位比较
 bool shallow(const QSampleMatcher * s1,const QSampleMatcher *s2){
     return (s1->leftSampleNo<s2->leftSampleNo);
 }
+//比较两个地层匹配连线谁更浅，按照右侧井眼层位比较
 bool shallowRight(const QSampleMatcher * s1,const QSampleMatcher *s2){
     return (s1->rightSampleNo<s2->rightSampleNo);
 }
+//比较两个地层深浅，按照地层的底部深度比较
 bool shallowsample(const QGeoSample *  s1,const QGeoSample *s2){
     return (s1->bottom() <s2->bottom());
 }
-bool linkerCompare(const QSampleLink *  s1,const QSampleLink *s2){
-    if (s2->leftSampleNo>s1->leftSampleNo ) return true;
-    if (s2->leftSampleNo<s1->leftSampleNo) return false;
-    if (s2->leftConnectPoint>s1->leftConnectPoint) return true;
-    if (s2->leftConnectPoint<s1->leftConnectPoint)return false;
-    if (s2->rightSampleNo>s1->rightSampleNo) return true;
-    if(s2->rightSampleNo<s1->rightSampleNo)return false;
-    if(s2->rightConnectPoint>s1->rightConnectPoint)return true;
-    if(s2->rightConnectPoint<s1->rightConnectPoint)return false;
-    return false;
-}
-bool linkerCompareRev(const QSampleLink *  s1,const QSampleLink *s2){
-    if (s2->rightSampleNo>s1->rightSampleNo) return true;
-    if(s2->rightSampleNo<s1->rightSampleNo)return false;
-    if(s2->rightConnectPoint>s1->rightConnectPoint)return true;
-    if(s2->rightConnectPoint<s1->rightConnectPoint)return false;
-    if (s2->leftSampleNo>s1->leftSampleNo ) return true;
-    if (s2->leftSampleNo<s1->leftSampleNo) return false;
-    if (s2->leftConnectPoint>s1->leftConnectPoint) return true;
-    if (s2->leftConnectPoint<s1->leftConnectPoint)return false;
-    return false;
-}
+//地层连线比较
+//bool linkerCompare(const QSampleLink *  s1,const QSampleLink *s2){
+//    if (s2->leftSampleNo>s1->leftSampleNo ) return true;
+//    if (s2->leftSampleNo<s1->leftSampleNo) return false;
+//    if (s2->leftConnectPoint>s1->leftConnectPoint) return true;
+//    if (s2->leftConnectPoint<s1->leftConnectPoint)return false;
+//    if (s2->rightSampleNo>s1->rightSampleNo) return true;
+//    if(s2->rightSampleNo<s1->rightSampleNo)return false;
+//    if(s2->rightConnectPoint>s1->rightConnectPoint)return true;
+//    if(s2->rightConnectPoint<s1->rightConnectPoint)return false;
+//    return false;
+//}
+//bool linkerCompareRev(const QSampleLink *  s1,const QSampleLink *s2){
+//    if (s2->rightSampleNo>s1->rightSampleNo) return true;
+//    if(s2->rightSampleNo<s1->rightSampleNo)return false;
+//    if(s2->rightConnectPoint>s1->rightConnectPoint)return true;
+//    if(s2->rightConnectPoint<s1->rightConnectPoint)return false;
+//    if (s2->leftSampleNo>s1->leftSampleNo ) return true;
+//    if (s2->leftSampleNo<s1->leftSampleNo) return false;
+//    if (s2->leftConnectPoint>s1->leftConnectPoint) return true;
+//    if (s2->leftConnectPoint<s1->leftConnectPoint)return false;
+//    return false;
+//}
 
-
+//角度转弧度
 double rad(double d) {
     return d * M_PI / 180.0;
 }
+//根据经纬度，计算地表两点间直线距离
 double getDistance(double lat1, double lng1, double lat2, double lng2) {
     double radLat1 = rad(lat1);
     double radLat2 = rad(lat2);
@@ -80,7 +89,7 @@ double getDistance(double lat1, double lng1, double lat2, double lng2) {
     s = s*1000;
     return s;
 }
-
+//地层采样初始化
 QGeoSample::QGeoSample(float top,float bot,QString des,int seal,QObject *parent):QObject(parent),_top(top),_bottom(bot),_seal(seal),_desc(des){
 
 }
@@ -174,7 +183,7 @@ void QGeoSample::setBottomLinked(const QList<QGeoSample *> &bottomLinked)
     _bottomLinked = bottomLinked;
 }
 
-
+//地层匹配项初始化
 QSampleMatcher::QSampleMatcher(int ln,int rn,QSection *parent):QObject(parent),leftSampleNo(ln),rightSampleNo(rn),section(parent){
 
 }
@@ -197,7 +206,7 @@ void QSampleMatcher::PrintIntersactions()
         qDebug()<<"\t"<<i<<"|"<<intersactions[keys[i]]->toStr();
     }
 }
-
+//地层匹配项的斜率，按照底部连线的深度差计算，这里假设井都是竖直方向平行的，所以斜率只和深度差相关
 float QSampleMatcher::slop() const
 {
     float leftDepth=this->section->left()->samples[this->leftSampleNo]->bottom();
@@ -224,7 +233,7 @@ AddSample(float top,float bot, QString desc,int seal)
     return AddSample(newsample);
     //    return nullptr;
 }
-
+//向井眼QWellbore增加地层采样，每次都要按照深度排序
 QGeoSample * QWellbore::AddSample(QGeoSample *sample)
 {
     this->samples.append(sample);
@@ -235,7 +244,6 @@ QGeoSample * QWellbore::AddSample(QGeoSample *sample)
     }
     return sample;
 }
-
 
 QString QWellbore::name() const
 {
@@ -352,14 +360,7 @@ void QSection::ProcessMissingFormations(QWellbore * left ,QWellbore * right,int 
 void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList<int>> & leftLinkedsampleMap,QMap<int ,QList<int>> & rightLinkedsampleMap,bool rev){
     int cursampleIndex=0;
     int prevLinkedsampleIndex=0;
-    //    QPointF prevLeft,prevRight;
-    //    if(!rev){
-    //      prevLeft=QPointF(left->top(),0);
-    //      prevRight=QPointF(right->top(),1);
-    //    }else{
-    //        prevLeft=QPointF(right->top(),0);
-    //        prevRight=QPointF(left->top(),1);
-    //    }
+
     while(cursampleIndex<left->samples.size()){
         QGeoSample *cursample=left->samples[cursampleIndex];
         if (leftLinkedsampleMap.contains(cursampleIndex)){
@@ -540,59 +541,7 @@ void QSection::ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList
             }else if (diffOfRight>0 && !rev){
                 this->ProcessMissingFormations(left,right,cursampleIndex-1,diffOfLeft-1,leftLinkedsampleMap[ prevLinkedsampleIndex].last(),diffOfRight-1,rev);
                 cursampleIndex+=diffOfLeft-1;
-                //                //若 diff>=2，则 A[i]与 B[n]和 B[m]之间的地层构成间断缺失模型，根据间断缺失 地层模型的尖灭规则选取尖灭点，依次连接地层 A[i]的上下分界点与其尖灭点;
-                //                //                针对地层间断缺失的情况，考虑到地层连接线的平缓，根据地层连线斜率的大小确定其尖灭点。
-                //                //                若地层与相邻钻孔中的地层构成间断缺失，则相邻钻孔中与其构成间断缺失的各地层的分界点都有可能是该地层的尖灭点。
-                //                //                分别计算该地层的上下分界点与上述各点的连线的 斜率，取两连线的较大值作为与各点平缓的参考值，取参考值最小的点作为尖灭点。
-                //                bool onLeftSide=true;//左侧
-                //                int leftsampleIndex=cursampleIndex;
-                //                int rightsampleIndex=leftLinkedsampleMap[prevLinkedsampleIndex].last();
-                //                //方法：以左侧为准，每次取左侧一个地层底部连到右侧顶部做尖灭，再反过来取右侧一个地层底部连接到左侧地层底部做尖灭，交替进行
-                //                while(true){
-                //                    if(onLeftSide){//左侧
 
-                //                        QVector<QPointF> verts;
-                //                        verts.append(QPointF(0,left->samples[leftsampleIndex]->top()));
-                //                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->bottom()));
-                //                        verts.append(QPointF(0,left->samples[leftsampleIndex]->bottom()));
-
-                //                        QGeoFormation * formation=new QGeoFormation(verts,left->samples[leftsampleIndex]->desc(),this);
-                //                        this->AddFormation(formation);
-                //                        left->samples[leftsampleIndex]->setFormation(formation);
-                //                        //                        sampleLinks->AddLink(new QSampleLink(leftsampleIndex,Bottom,rightsampleIndex,Top));
-                //                        //如果
-                //                        if(rightsampleIndex<leftLinkedsampleMap[nextLinkedsampleIndex].first()-1){
-                //                            onLeftSide=false;
-                //                            rightsampleIndex++;
-                //                        }else{
-                //                            leftsampleIndex++;
-                //                        }
-
-                //                    }else{
-
-                //                        QVector<QPointF> verts;
-                //                        verts.append(QPointF(0,left->samples[leftsampleIndex]->bottom()));
-                //                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->top()));
-                //                        verts.append(QPointF(_distance,right->samples[rightsampleIndex]->bottom()));
-
-                //                        QGeoFormation * formation=new QGeoFormation(verts,right->samples[rightsampleIndex]->desc(),this);
-                //                        this->AddFormation(formation);
-
-                //                        right->samples[rightsampleIndex]->setFormation(formation);
-                //                        //                        sampleLinks->AddLink(new QSampleLink(leftsampleIndex,Bottom,rightsampleIndex,Bottom));
-                //                        if(leftsampleIndex<nextLinkedsampleIndex-1){
-                //                            onLeftSide=true;
-                //                            leftsampleIndex++;
-                //                        }else{
-                //                            rightsampleIndex++;
-                //                        }
-
-                //                    }
-                //                    if ((onLeftSide && leftsampleIndex>=nextLinkedsampleIndex) || (!onLeftSide && rightsampleIndex>=leftLinkedsampleMap[nextLinkedsampleIndex].first())){
-                //                        break;
-                //                    }
-                //                }
-                //                cursampleIndex=nextLinkedsampleIndex;
             }else if (diffOfRight>0 && rev && left->samples[cursampleIndex]->formation()==nullptr){
 
                 //若 diff>=2，则 A[i]与 B[n]和 B[m]之间的地层构成间断缺失模型，根据间断缺失 地层模型的尖灭规则选取尖灭点，依次连接地层 A[i]的上下分界点与其尖灭点;
@@ -798,11 +747,12 @@ void QSection::processConnections(QMap<QString,QSampleMatcher*> &  samplePairs,c
     }
 }
 void QSection::process(){
-    //    (1)将相邻两钻孔中属性相同的地层层底进行连接。
+// 地层连接字典，比如左1和右2层系相同，则对应 1-2: matcher
     QMap<QString,QSampleMatcher*>samplePairs;
-
+//    第一步，增加封顶和封底虚拟层
     this->_left->seal();
     this->_right->seal();
+//    第二步，将左右井眼地层按照地质属性相连，只要是同一地址属性，就建立连接
     for(int i=0;i<_left->samples.size();i++){
         for (int j=0;j<_right->samples.size();j++){
             if(_left->samples[i]->desc().compare(_right->samples[j]->desc(),Qt::CaseInsensitive)==0){
@@ -811,7 +761,9 @@ void QSection::process(){
             }
         }
     }
+//    统计各连接线与其余连线的交点数目,去掉相交的地层匹配，保证无交叉
     this->processConnections(samplePairs,more_intersactions);
+    //将匹配的地层按照左侧地层深度进行排序，
     QList<QSampleMatcher*> connects=samplePairs.values();
     std::sort(connects.begin(),connects.end(),shallow);
     qDebug()<<"Section:"<<this->name();
@@ -820,6 +772,10 @@ void QSection::process(){
     }
 
     QStringList sampleConnectKeys=samplePairs.keys();
+    //建立两个字典，
+//    leftLinkedsampleMap,记录每一个左侧地层和哪几个右侧地层匹配,key是左侧地层序号，value是右侧匹配地层序号数组，可能是0-n项
+//    rightLinkedsampleMap,记录每一个右侧地层和哪几个右侧地层匹配,key是左侧地层序号，value是右侧匹配地层序号数组，可能是0-n项
+//    根据上面消掉交叉后的底层匹配建立这两个字典
     QMap<int ,QList<int>> leftLinkedsampleMap,rightLinkedsampleMap;
     foreach(auto sampleConnect ,sampleConnectKeys){
         QStringList parts=sampleConnect.split('-');
@@ -835,10 +791,9 @@ void QSection::process(){
         std::sort(linkedsamples.begin(),linkedsamples.end(),std::less<int>());
         rightLinkedsampleMap[parts[1].toInt()]=linkedsamples;
     }
-    //    QSampleLinks * ll=new QSampleLinks(this);
+    //处理尖灭、1对多，多对1的情况，分两趟，一趟以左侧视角进行，再以右侧视角进行
     this->ProcessSamples(_left,_right,leftLinkedsampleMap,rightLinkedsampleMap,false);
     this->ProcessSamples(_right,_left,rightLinkedsampleMap,leftLinkedsampleMap,true);
-    //    ll->Normalize();
     return;
 }
 
@@ -947,15 +902,15 @@ void QSampleLinks::AddLink(QSampleLink *samplelink)
 
 void QSampleLinks::Normalize()
 {
-    QList<QSampleLink*> samplelinks = _links.values();
-    std::sort(samplelinks.begin(),samplelinks.end(),linkerCompare);
-    for(int i=0;i<samplelinks.size();i++){
-        _linksByLeft[samplelinks[i]->leftSampleNo].append(samplelinks[i]);
-    }
-    std::sort(samplelinks.begin(),samplelinks.end(),linkerCompareRev);
-    for(int i=0;i<samplelinks.size();i++){
-        _linksByRight[samplelinks[i]->rightSampleNo].append(samplelinks[i]);
-    }
+//    QList<QSampleLink*> samplelinks = _links.values();
+//    std::sort(samplelinks.begin(),samplelinks.end(),linkerCompare);
+//    for(int i=0;i<samplelinks.size();i++){
+//        _linksByLeft[samplelinks[i]->leftSampleNo].append(samplelinks[i]);
+//    }
+//    std::sort(samplelinks.begin(),samplelinks.end(),linkerCompareRev);
+//    for(int i=0;i<samplelinks.size();i++){
+//        _linksByRight[samplelinks[i]->rightSampleNo].append(samplelinks[i]);
+//    }
 }
 
 QGeoFormation* QGeoSample::formation() const

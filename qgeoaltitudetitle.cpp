@@ -5,6 +5,10 @@
 #include <QPainter>
 #include <types.h>
 #include <QGraphicsWidget>
+
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
+
+
 QGeoAltitudeTitle::QGeoAltitudeTitle(QRectF ticks, QGraphicsItem *parent):QGeoTitle(parent),_ticks(ticks)
 {
 

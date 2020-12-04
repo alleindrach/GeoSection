@@ -2,6 +2,11 @@
 #include <types.h>
 #include <qgeosectioncontent.h>
 #include <qgeosectionscene.h>
+
+
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
+
+
 QGeoAltitudeWidget::QGeoAltitudeWidget(QRectF ticks, QGraphicsItem *parent): QGeoSectionContent(ticks,parent)
 {
 
@@ -15,11 +20,12 @@ void QGeoAltitudeWidget::paint(QPainter *painter, const QStyleOptionGraphicsItem
     QTransform oriTransform=painter->transform();
     QRectF boundingRect=this->boundingRect();
     painter->fillRect(boundingRect,Qt::white);
+
     float xscale = 1;
     float yscale = boundingRect.height()/(this->ticks().height()+GROUND_THICKNESS*2);
 
     painter->setPen(QPen(QBrush(DARK_RED),1,Qt::PenStyle::SolidLine));
-
+    painter->drawRect(boundingRect);
     QFont font=painter->font();
     font.setPixelSize(8);
 

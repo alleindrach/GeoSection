@@ -1,11 +1,12 @@
 #ifndef QGEOLAYERSWIDGET_H
 #define QGEOLAYERSWIDGET_H
-
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
 #include "types.h"
 #include <QPainter>
 #include <QGraphicsItem>
 #include <QStyleOptionGraphicsItem>
 #include <qgeosectioncontent.h>
+//地层栏
 class QGeoFormationsWidget:public QGeoSectionContent
 {
 
@@ -24,6 +25,7 @@ class QGeoFormationsWidget:public QGeoSectionContent
 
 private:
         QSection* _section;
+        //绘制两个相邻井眼间的地层图
         void drawLayers(QPainter *painter);
         bool _last=false;
 

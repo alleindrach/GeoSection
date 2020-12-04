@@ -6,6 +6,12 @@
 #include "qgeoaltitudewidget.h"
 #include "qgeoaltitudetitle.h"
 #include <QVector>
+#include <QtPrintSupport/QPrintDialog>
+#include <QtPrintSupport/QPrinter>
+
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
+
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -42,9 +48,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     W56->AddSample(-1.68,-0.98,"粉质黏土2");
     W56->AddSample(-0.98,2.32,"淤泥");
-//    W56->AddSample(-0.98,1,"淤泥");
-//    W56->AddSample(1,3.32,"沙泥");
-//    W56->AddSample(3.32,4.32,"淤泥");
+    //    W56->AddSample(-0.98,1,"淤泥");
+    //    W56->AddSample(1,3.32,"沙泥");
+    //    W56->AddSample(3.32,4.32,"淤泥");
     W56->AddSample(2.32,5.32,"耕土");
 
     QWellbore * W49=new QWellbore("GWzk49",this);
@@ -72,7 +78,7 @@ MainWindow::MainWindow(QWidget *parent)
     QList<QWellbore *> wells={W63,W56,W49,W42,W35,W28,W21};
     QList<float > wellDistance={18.45,19.36,30.71,25.13,24.94,25.06};
     QVector<QSection*>sections;
-//    QVector<QGeoSectionWidget *> sectionWigets;
+    //    QVector<QGeoSectionWidget *> sectionWigets;
     float top=9999999999,bottom=-999999999;
     float width=0;
     int s=wells.length();
@@ -106,8 +112,8 @@ MainWindow::MainWindow(QWidget *parent)
     QGeoAltitudeTitle * title=new QGeoAltitudeTitle(QRectF(QPointF(0,top),QPointF(50,bottom)),((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
     QGeoSectionWidget * track=new QGeoSectionWidget(title,content,((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
 
-//        connect(track,&QGeoSectionWidget::hoverData,this,&MainWindow::on_hover_data);
-//        sectionWigets.append(track);
+    //        connect(track,&QGeoSectionWidget::hoverData,this,&MainWindow::on_hover_data);
+    //        sectionWigets.append(track);
     scene->AddSection(track,-1,1);
 
     for(int i=0;i<sections.length();i++){
@@ -118,8 +124,8 @@ MainWindow::MainWindow(QWidget *parent)
         title->setLast(i==sections.length()-1);
         QGeoSectionWidget * track=new QGeoSectionWidget(title,content,((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
         int sf=sec->width()*100/width;
-//        connect(track,&QGeoSectionWidget::hoverData,this,&MainWindow::on_hover_data);
-//        sectionWigets.append(track);
+        //        connect(track,&QGeoSectionWidget::hoverData,this,&MainWindow::on_hover_data);
+        //        sectionWigets.append(track);
         scene->AddSection(track,-1,sf);
     }
     this->resize(this->size()+QSize(1,1));
@@ -143,3 +149,17 @@ void MainWindow::on_actionOpen_triggered()
 //    _statusData->setText(des);
 //    _statusDepth->setText(QString().asprintf(("MD:%6.2f"),pos.y()));
 //}
+
+void MainWindow::on_actionExport_triggered()
+{
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setPageSize(QPrinter::A4);
+    printer.setOrientation(QPrinter::Portrait);
+    QPrintDialog dlg(&printer);
+    if(dlg.exec()==QDialog::Accepted) {
+        QPainter p(&printer);
+        ui->graphicsView->scene()->render(&p);
+        p.end();
+        return;
+    }
+}

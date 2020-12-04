@@ -1,5 +1,6 @@
 #ifndef TYPES_H
 #define TYPES_H
+// Copyright 2020 Alleindrach@gmail.com 唐恒. All rights reserved.
 
 #include <QMetaType>                            //自定义参数类型的头文件----***
 #include <QList>
@@ -26,6 +27,8 @@
 #define DEFAULT_LEGEND "default"
 #define BRUSH_X_SCALE 5
 #define BRUSH_Y_SCALE 5
+
+
 enum LayerMatch{
     One2One,
     One2Many,
@@ -43,6 +46,8 @@ extern double getDistance(double lat1, double lng1, double lat2, double lng2);
 class QGeoFormation;
 class QSampleLinks;
 class QSection;
+//地层采样，
+//如果seal=1，表明是一个虚拟的封顶、封底层，厚度=0
 class QGeoSample : public QObject{
     Q_OBJECT
 public:
@@ -82,6 +87,7 @@ public:
     void setFake(bool fake);
 
 private:
+    //是否尖灭
     bool _vanish=false;
     int _index=0;
     float _top=0;
@@ -93,7 +99,7 @@ private:
     QGeoFormation * _formation=nullptr;
 };
 Q_DECLARE_METATYPE(QGeoSample*);
-
+//井眼间地层匹配结构，intersactions是交线
 class QSampleMatcher:public QObject{
     Q_OBJECT
 public:
@@ -109,7 +115,7 @@ public:
 Q_DECLARE_METATYPE(QSampleMatcher*);
 
 typedef bool  (*connector_comparor)( const QSampleMatcher * arg1, const QSampleMatcher * arg2);
-
+//井眼间地层关联结构
 class QSampleLink:public QObject{
     Q_OBJECT
 public:
@@ -128,7 +134,7 @@ public:
     void setRightConnectPoint(const ConnectPoint &value);
 };
 Q_DECLARE_METATYPE(QSampleLink*);
-
+//井眼结构，一个井眼包含多个地层采样samples
 class  QWellbore:public QObject{
     Q_OBJECT
 public:
@@ -150,41 +156,49 @@ private:
 };
 
 Q_DECLARE_METATYPE(QWellbore*);
+//相邻双井间的地质纵剖面结构，
+//井眼A 剖面 井眼B
+//  |        |
+//  | ——————-|
+//  |   地 层 |
+//  | ———————|
+//  |        |
+//  |        |
+//  |        |
+//  |        |
 class  QSection:public QObject{
     Q_OBJECT
 public:
     explicit QSection(QWellbore *left=nullptr ,QWellbore * right=nullptr,float distance=0,QObject *parent=nullptr);
     //    ~QSection();
-    void  process();
+    void  process(); //层间关系处理
     QString name();
-    float top();
-    float bottom();
-    float width();
-    QWellbore *left() const;
+    float top();//取双井最浅处
+    float bottom();//取双井最深处
+    float width();//实际上是井间距，
+    QWellbore *left() const; //左侧井眼
     void setLeft(QWellbore *left);
 
-    QWellbore *right() const;
+    QWellbore *right() const;//右侧井眼
     void setRight(QWellbore *right);
 
     float distance() const;
     void setDistance(float distance);
 
-    QList<QGeoFormation *> formations() const;
+    QList<QGeoFormation *> formations() const; //地层信息
     void setFormations(const QList<QGeoFormation *> &formations);
     void ProcessMissingFormations(QWellbore * left ,QWellbore * right,int leftNo ,int leftSize,int rightNo,int rightSize,bool rev);
     void processConnections(QMap<QString,QSampleMatcher*> &  samplePairs,connector_comparor);
     void ProcessSamples(QWellbore* left ,QWellbore *right, QMap<int ,QList<int>> & leftLinkedsampleMap,QMap<int ,QList<int>> & rightLinkedsampleMap,bool rev=false);
     void AddFormation(QGeoFormation* formation);
-    void drawGround(QPainter * painter);
+    void drawGround(QPainter * painter); //绘制剖面边界
     void drawOneGround(QPainter *painter, QTransform& transform2,QPolygonF & poly,QLineF & line);
     void drawGround(QPainter * painter,QTransform& transform);
-    float depth();
+    float depth(); //深度间距
 private:
     QWellbore *_left;
     QWellbore *_right;
     float _distance;
-    //    QList<QLayerConnect*> connects;
-//    QMap<QString,QSampleMatcher*>samplePairs;
     QList<QSampleLink *>  sampleLinks;
     QList<QGeoFormation*> _formations;
 };
@@ -201,14 +215,13 @@ private:
     QMap<int,QList<QSampleLink*>> _linksByRight;
 };
 Q_DECLARE_METATYPE(QSampleLinks*);
+//地层，主要数据是其边界路径contour，是绘制时的依据，通常是由上下左右四边组成
 class QGeoFormation:public QObject{
     Q_OBJECT
 public:
     explicit QGeoFormation(QPainterPath contour,QString desc,QObject * parent=nullptr);
     explicit QGeoFormation(QVector<QPointF> contour,QString desc ,QObject * parent=nullptr);
     QPainterPath contour;
-//    QVector<QPointF> verts;
-
     QString desc() const;
     void merge(QVector<QPointF> contour);
     void sub(QVector<QPointF> contour);
