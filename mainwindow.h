@@ -16,7 +16,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-
+void on_hover_data(QPointF pos,QString comp,QString des);
 private slots:
     void on_actionOpen_triggered();
 //    void on_hover_data(QPointF pos,QString comp,QString des);

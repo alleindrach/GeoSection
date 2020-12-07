@@ -40,7 +40,7 @@ QGeoSectionWidget::QGeoSectionWidget(QGeoTitle *title, QGeoSectionContent *conte
 
 void QGeoSectionWidget::on_hover_data(QPointF pos,  QString des)
 {
-//    emit this->hoverData(pos,_title->title(),des);
+    emit this->hoverData(pos,_title->title(),des);
 }
 
 

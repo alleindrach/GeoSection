@@ -41,16 +41,16 @@ void QGeoAltitudeWidget::paint(QPainter *painter, const QStyleOptionGraphicsItem
     painter->fillRect(QRectF(mlt,mrb),DARK_RED);
 
     int span=ceil(_ticks.height())*100;
-    int ascale=ceil(span/100);
+    int ascale=ceil((span+500)/1000)*10;
 
 
     qDebug()<<"span:"<<span<<",ascale:"<<ascale;
     float b =int(_ticks.top()*100/ascale)*ascale/100;
     qDebug()<<"step from:"<<b;
     while(b<_ticks.bottom()){
-        QLineF l=QLineF(transform.map(QPointF(barleft,b)),transform.map(QPointF(barleft+barwidth,b)));
+        QLineF l=QLineF(transform.map(QPointF(barleft+barwidth,b)),transform.map(QPointF(barleft+barwidth*3,b)));
         painter->drawLine(l);
-        painter->drawText(transform.map(QPointF(barleft+barwidth,b)),QString::number(b,'f',2));
+        painter->drawText(transform.map(QPointF(barleft+barwidth*4,b)),QString::number(b,'f',2));
         b+=(float(ascale)/10.0);
         qDebug()<<"step:"<<b;
     }

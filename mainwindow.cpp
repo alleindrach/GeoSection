@@ -124,10 +124,11 @@ MainWindow::MainWindow(QWidget *parent)
         title->setLast(i==sections.length()-1);
         QGeoSectionWidget * track=new QGeoSectionWidget(title,content,((QGeoSectionScene*)(ui->graphicsView->scene()))->topWidget());
         int sf=sec->width()*100/width;
-        //        connect(track,&QGeoSectionWidget::hoverData,this,&MainWindow::on_hover_data);
+        connect(track,&QGeoSectionWidget::hoverData,this,&MainWindow::on_hover_data);
         //        sectionWigets.append(track);
         scene->AddSection(track,-1,sf);
     }
+
     this->resize(this->size()+QSize(1,1));
 }
 
@@ -143,13 +144,6 @@ void MainWindow::on_actionOpen_triggered()
 
 
 }
-//void MainWindow::on_hover_data(QPointF pos,QString comp, QString des)
-//{
-//    _statusComponenet->setText(comp);
-//    _statusData->setText(des);
-//    _statusDepth->setText(QString().asprintf(("MD:%6.2f"),pos.y()));
-//}
-
 void MainWindow::on_actionExport_triggered()
 {
     QPrinter printer(QPrinter::HighResolution);
@@ -162,4 +156,10 @@ void MainWindow::on_actionExport_triggered()
         p.end();
         return;
     }
+}
+void MainWindow::on_hover_data(QPointF pos,QString comp, QString des)
+{
+    _statusComponenet->setText(comp);
+    _statusData->setText(des);
+    _statusDepth->setText(QString().asprintf(("MD:%6.2f"),pos.y()));
 }

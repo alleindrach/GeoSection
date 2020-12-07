@@ -22,7 +22,14 @@ class QGeoFormationsWidget:public QGeoSectionContent
         QSizeF sizeHint(Qt::SizeHint which, const QSizeF &constraint) const override;
         bool last() const;
         void setLast(bool last);
-
+ protected:
+//        virtual void keyPressEvent(QKeyEvent *event) override;
+//        virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+        virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+        virtual void hoverLeaveEvent (QGraphicsSceneHoverEvent * event) override;
+        virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
+//        virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+//        virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
 private:
         QSection* _section;
         //绘制两个相邻井眼间的地层图

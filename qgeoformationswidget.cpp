@@ -10,6 +10,12 @@ QGeoFormationsWidget::QGeoFormationsWidget( QSection  * section , QRectF ticks, 
     QGeoSectionContent(ticks,parent),_section(section)
 {
     this->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    setFlag(QGraphicsItem::ItemIsFocusable);
+    setFlag(QGraphicsItem::ItemIsSelectable);
+    setFlag(QGraphicsItem::ItemIsMovable);
+    setAcceptHoverEvents(true);
+    setAcceptTouchEvents(true);
+
 }
 QSizeF QGeoFormationsWidget::sizeHint(Qt::SizeHint which, const QSizeF &constraint) const
 {
@@ -42,20 +48,19 @@ void QGeoFormationsWidget::paint(QPainter *painter, const QStyleOptionGraphicsIt
 
 QString QGeoFormationsWidget::dataAtPos(QPointF pos)
 {
-    //    QRectF boundingRect=this->boundingRect();
-    //    QString result;
-    //    QStringList r;
-    //    if(_curves.size()>0){
-    //        for(int i=0;i<_curves.size();i++){
-    //            float yscale = _curves[i].first.ticks.height()/boundingRect.height();
-    //            float depth = pos.y()*yscale;
-    //            int pos=Utility::binarySearch(_curves[i].second,0,_curves[i].first.points-1,depth);
-    //            QString des=QString("%1-%2").arg(_curves[i].first.title).arg(_curves[i].second[pos].x());
-    //            r<<des;
-    //        }
-    //    }
-    //    return r.join(",");
-    return "";
+    QTransform  transform;
+    QRectF boundingRect=this->boundingRect();
+
+    float xscale = boundingRect.width()/this->ticks().width();
+    float yscale = boundingRect.height()/(this->ticks().height()+GROUND_THICKNESS*2);
+
+    qDebug()<<"xs:"<<xscale<<",ys:"<<yscale;
+    qDebug()<<"l:"<<this->ticks().left()<<",t:"<<this->ticks().top()<<",r:"<<this->ticks().right()<<",b:"<<this->ticks().bottom();
+    transform.scale(xscale,-yscale);
+    transform.translate(0-this->ticks().left(),-(this->ticks().bottom()+GROUND_THICKNESS));
+    QPointF transedPos=transform.map(pos);
+
+    return QString("%1,%2 %3").arg(transedPos.x()).arg(transedPos.y()).arg(this->_section->CurFormation(transedPos)==nullptr?"":this->_section->CurFormation(transedPos)->desc());
 }
 
 void QGeoFormationsWidget::drawLayers(QPainter * painter)
@@ -63,8 +68,6 @@ void QGeoFormationsWidget::drawLayers(QPainter * painter)
 
     QTransform oriTransform=painter->transform();
     QRectF boundingRect=this->boundingRect();
-    //    QPointF scrollDiff=view->mapFromScene(QPointF(0,0));
-    //    ticks的 top对齐到y=0，ticks的bottom对齐到boundingRect的底部
 
 
     float xscale = boundingRect.width()/this->ticks().width();
@@ -108,4 +111,27 @@ bool QGeoFormationsWidget::last() const
 void QGeoFormationsWidget::setLast(bool last)
 {
     _last = last;
+}
+void QGeoFormationsWidget::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
+{
+
+    this->setSelected(true);
+    this->update();
+}
+
+void QGeoFormationsWidget::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+{
+    this->setSelected(false);
+    this->update();
+}
+
+void QGeoFormationsWidget::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
+{
+
+    QRectF boundingRect=this->boundingRect();
+    float depth=event->pos().y()/boundingRect.height()* ticks().height()+ticks().top();
+    QPointF p(0,depth);
+    QString dataDes=dataAtPos(event->pos());
+    emit hoverData(p,dataDes);
+
 }

@@ -195,6 +195,7 @@ public:
     void drawOneGround(QPainter *painter, QTransform& transform2,QPolygonF & poly,QLineF & line);
     void drawGround(QPainter * painter,QTransform& transform);
     float depth(); //深度间距
+    QGeoFormation*  CurFormation(QPointF p);
 private:
     QWellbore *_left;
     QWellbore *_right;
@@ -223,6 +224,7 @@ public:
     explicit QGeoFormation(QVector<QPointF> contour,QString desc ,QObject * parent=nullptr);
     QPainterPath contour;
     QString desc() const;
+    bool In(QPointF p);
     void merge(QVector<QPointF> contour);
     void sub(QVector<QPointF> contour);
     void setDesc(const QString &desc);

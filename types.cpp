@@ -613,6 +613,17 @@ void QSection::AddFormation(QGeoFormation *formation)
 float QSection::depth(){
     return this->bottom()-this->top();
 }
+
+QGeoFormation * QSection::CurFormation(QPointF p)
+{
+    for(int i=0;i<_formations.size();i++){
+        QGeoFormation * formation=_formations[i];
+        if(formation->In(p)){
+            return formation;
+        }
+    }
+    return nullptr;
+}
 void QSection::drawGround(QPainter *painter)
 {
     QPainterPath groundPath;
@@ -987,6 +998,11 @@ QGeoFormation::QGeoFormation(QVector<QPointF> verts, QString desc, QObject *pare
 QString QGeoFormation::desc() const
 {
     return _desc;
+}
+
+bool QGeoFormation::In(QPointF p)
+{
+    return this->contour.contains(p);
 }
 
 void QGeoFormation::merge(QVector<QPointF> verts)
